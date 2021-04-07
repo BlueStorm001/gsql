@@ -9,8 +9,8 @@ import (
 
 ``` golang
 var serve = gsql.NewServer("127.0.0.1", 3306, "database", gsql.MySql).
-NewAuth("username", "password").
-NewConfig(100, 60)
+    NewAuth("username", "password").
+    NewConfig(100, 60)
 ```
 
 ``` golang
