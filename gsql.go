@@ -21,6 +21,7 @@
 package gsql
 
 import (
+	"database/sql"
 	"errors"
 	"gsql/datatable"
 	"gsql/mssqls"
@@ -80,6 +81,11 @@ func (s *Serve) NewAuth(user, pass string) *Serve {
 		s.Auth.User = user
 		s.Auth.Pass = pass
 	}
+	return s
+}
+
+func (s *Serve) Drive(f func(s *datatable.Serve) (db *sql.DB, err error)) *Serve {
+	s.Drives = f
 	return s
 }
 

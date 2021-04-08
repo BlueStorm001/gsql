@@ -23,8 +23,6 @@ package mssqls
 import (
 	"database/sql"
 	"errors"
-	"fmt"
-	mssql "github.com/denisenkom/go-mssqldb"
 	"gsql/datatable"
 	"gsql/util"
 )
@@ -34,24 +32,45 @@ type Serve struct {
 	conn *sql.DB
 }
 
-func (s *Serve) Connect() error {
-	connString := fmt.Sprintf("server=%s;database=%s;user id=%s;password=%s;port=%d", s.Host, s.Database, s.Auth.User, s.Auth.Pass, s.Port)
-	conn, err := mssql.NewAccessTokenConnector(connString,
-		func() (string, error) {
-			return "", nil
-		})
-	if err != nil {
-		return err
-	}
-	s.conn = sql.OpenDB(conn)
-	return s.Ping()
-}
+//func (s *Serve) Connect(f func(s *Serve) (db *sql.DB, err error)) *Serve  {
+//	//connString := fmt.Sprintf("server=%s;database=%s;user id=%s;password=%s;port=%d", s.Host, s.Database, s.Auth.User, s.Auth.Pass, s.Port)
+//	//conn, err := mssql.NewAccessTokenConnector(connString,
+//	//	func() (string, error) {
+//	//		return "", nil
+//	//	})
+//	//if err != nil {
+//	//	return err
+//	//}
+//	//s.conn = sql.OpenDB(conn)
+//	return s
+//}
 
-func (s *Serve) Ping() error {
+//func (s *Serve) Connect(f func(s *Serve) (db *sql.DB, err error)) bool {
+//	//connString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8", s.Auth.User, s.Auth.Pass, s.Host, s.Port, s.Database)
+//	s.conn, s.Error = f(s)
+//	if s.Error != nil {
+//		return false
+//	}
+//	s.Error = s.conn.Ping()
+//	if s.Error == nil {
+//		s.drive = f
+//		return true
+//	}
+//	return false
+//}
+
+func (s *Serve) connect() error {
+	if s.Drives == nil {
+		return errors.New("drive error")
+	}
+	s.conn, s.Error = s.Drives(s.Serve)
+	if s.Error != nil {
+		return s.Error
+	}
 	return s.conn.Ping()
 }
 
-func (s *Serve) Close() error {
+func (s *Serve) close() error {
 	var err error
 	if s.conn != nil {
 		if err = s.conn.Close(); err == nil {
@@ -63,21 +82,21 @@ func (s *Serve) Close() error {
 
 func (s *Serve) query(command string, args ...interface{}) (*sql.Rows, error) {
 	if s.conn == nil {
-		if err := s.Connect(); err != nil {
+		if err := s.connect(); err != nil {
 			return nil, err
 		}
 	}
-	defer s.Close()
+	defer s.close()
 	return s.conn.Query(command, args...)
 }
 
 func (s *Serve) exec(command string, args ...interface{}) (sql.Result, error) {
 	if s.conn == nil {
-		if err := s.Connect(); err != nil {
+		if err := s.connect(); err != nil {
 			return nil, err
 		}
 	}
-	defer s.Close()
+	defer s.close()
 	return s.conn.Exec(command, args...)
 }
 

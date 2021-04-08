@@ -23,9 +23,6 @@ package mysqls
 import (
 	"database/sql"
 	"errors"
-	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"gsql/datatable"
 	"gsql/util"
 	"strings"
@@ -33,24 +30,36 @@ import (
 
 type Serve struct {
 	*datatable.Serve
-	conn *sqlx.DB
+	conn *sql.DB
+	//drive func(s *Serve) (db *sql.DB, err error)
 }
 
-func (s *Serve) Connect() error {
-	connString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8", s.Auth.User, s.Auth.Pass, s.Host, s.Port, s.Database)
-	var err error
-	s.conn, err = sqlx.Open("mysql", connString)
-	if err != nil {
-		return err
+//func (s *Serve) Connect(f func(s *Serve) (db *sql.DB, err error)) bool {
+//	//connString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8", s.Auth.User, s.Auth.Pass, s.Host, s.Port, s.Database)
+//	s.conn, s.Error = f(s)
+//	if s.Error != nil {
+//		return false
+//	}
+//	s.Error = s.conn.Ping()
+//	if s.Error == nil {
+//		s.drive = f
+//		return true
+//	}
+//	return false
+//}
+
+func (s *Serve) connect() error {
+	if s.Drives == nil {
+		return errors.New("drive error")
 	}
-	return s.Ping()
-}
-
-func (s *Serve) Ping() error {
+	s.conn, s.Error = s.Drives(s.Serve)
+	if s.Error != nil {
+		return s.Error
+	}
 	return s.conn.Ping()
 }
 
-func (s *Serve) Close() error {
+func (s *Serve) close() error {
 	var err error
 	if s.conn != nil {
 		if err = s.conn.Close(); err == nil {
@@ -62,21 +71,21 @@ func (s *Serve) Close() error {
 
 func (s *Serve) query(command string, args ...interface{}) (*sql.Rows, error) {
 	if s.conn == nil {
-		if err := s.Connect(); err != nil {
+		if err := s.connect(); err != nil {
 			return nil, err
 		}
 	}
-	defer s.Close()
+	defer s.close()
 	return s.conn.Query(command, args...)
 }
 
 func (s *Serve) exec(command string, args ...interface{}) (sql.Result, error) {
 	if s.conn == nil {
-		if err := s.Connect(); err != nil {
+		if err := s.connect(); err != nil {
 			return nil, err
 		}
 	}
-	defer s.Close()
+	defer s.close()
 	return s.conn.Exec(command, args...)
 }
 

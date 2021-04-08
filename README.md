@@ -4,13 +4,40 @@ golang sql orm
 import (
     "fmt"
     "github.com/BlueStorm001/gsql"
+    mssql "github.com/denisenkom/go-mssqldb"
+    _ "github.com/go-sql-driver/mysql"
 )
+```
+``` golang
+func MSSqlDrive(s *datatable.Serve) (db *sql.DB, err error) {
+    connString := fmt.Sprintf("server=%s;database=%s;user id=%s;password=%s;port=%d", s.Host, s.Database, s.Auth.User, s.Auth.Pass, s.Port)
+    conn, err := mssql.NewAccessTokenConnector(connString,
+    func() (string, error) {
+        return "", nil
+    })
+    if err != nil {
+        return
+    }
+    db = sql.OpenDB(conn)
+    err = db.Ping()
+    return
+}
+func MySqlDrive(s *datatable.Serve) (db *sql.DB, err error) {
+    connString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8", s.Auth.User, s.Auth.Pass, s.Host, s.Port, s.Database)
+    db, err = sql.Open("mysql", connString)
+    if err != nil {
+        return
+    }
+    err = db.Ping()
+        return
+    }
+}
 ```
 
 ``` golang
 var serve = gsql.NewServer("127.0.0.1", 3306, "database", gsql.MySql).
     NewAuth("username", "password").
-    NewConfig(100, 60)
+    NewConfig(100, 60).Drive(MySqlDrive)
 ```
 
 ``` golang

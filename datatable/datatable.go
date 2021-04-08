@@ -27,9 +27,9 @@ import (
 )
 
 type ISQL interface {
-	Connect() error
-	Ping() error
-	Close() error
+	//Connect(f func(s *Serve) (db *sql.DB, err error)) bool
+	//Ping() error
+	//Close() error
 	DataSet(orm *ORM) (*DataSet, error)
 	DataTable(orm *ORM) (*DataTable, error)
 	Select(orm *ORM, columns ...string) error
@@ -77,6 +77,7 @@ type Serve struct {
 	//超时(秒)
 	Timeout int //Second/1
 	Error   error
+	Drives  func(s *Serve) (db *sql.DB, err error)
 }
 
 type Column struct {
