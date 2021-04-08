@@ -45,5 +45,6 @@ func TestSql(t *testing.T) {
 		}
 	} else {
 		t.Log(orm.Error)
+
 	}
 }
