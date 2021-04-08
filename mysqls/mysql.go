@@ -34,20 +34,6 @@ type Serve struct {
 	//drive func(s *Serve) (db *sql.DB, err error)
 }
 
-//func (s *Serve) Connect(f func(s *Serve) (db *sql.DB, err error)) bool {
-//	//connString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8", s.Auth.User, s.Auth.Pass, s.Host, s.Port, s.Database)
-//	s.conn, s.Error = f(s)
-//	if s.Error != nil {
-//		return false
-//	}
-//	s.Error = s.conn.Ping()
-//	if s.Error == nil {
-//		s.drive = f
-//		return true
-//	}
-//	return false
-//}
-
 func (s *Serve) connect() error {
 	if s.Drives == nil {
 		return errors.New("drive error")

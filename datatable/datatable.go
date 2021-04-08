@@ -27,9 +27,6 @@ import (
 )
 
 type ISQL interface {
-	//Connect(f func(s *Serve) (db *sql.DB, err error)) bool
-	//Ping() error
-	//Close() error
 	DataSet(orm *ORM) (*DataSet, error)
 	DataTable(orm *ORM) (*DataTable, error)
 	Select(orm *ORM, columns ...string) error
