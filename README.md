@@ -1,5 +1,5 @@
 # gsql
-golang sql orm
+golang SQL ORM
 ``` golang
 import (
     "fmt"
