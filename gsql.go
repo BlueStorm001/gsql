@@ -54,7 +54,7 @@ func NewServer(host string, port int) *Serve {
 }
 
 func NewDrive(baseType DatabaseType, drive func() (db *sql.DB, err error)) *Serve {
-	serve := &datatable.Serve{ConnectMax: runtime.NumCPU() * 2, Timeout: 60, Auth: new(datatable.Auth)}
+	serve := &datatable.Serve{ConnectMax: runtime.NumCPU() * 2, Timeout: 60}
 	s := &Serve{Serve: serve}
 	s.Database(baseType, "")
 	s.Drive = drive
@@ -363,10 +363,6 @@ func (s *Serve) reset(orm *ORM) {
 func (s *Serve) err() bool {
 	if s == nil {
 		s.Error = errors.New(msg(504))
-		return true
-	}
-	if s.Auth == nil {
-		s.Error = errors.New(msg(501))
 		return true
 	}
 	if s.ISQL == nil {
