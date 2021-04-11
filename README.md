@@ -8,7 +8,26 @@ import (
     _ "github.com/go-sql-driver/mysql"
 )
 ```
+
 ``` golang
+//第一种使用方式（推荐）
+//The first way to use
+//MYSQL
+func MySqlConnDrive() (db *sql.DB, err error) {
+	connString := "user:pass@tcp(host:3306)/database?charset=utf8"
+	db, err = sql.Open("mysql", connString)
+	return
+}
+//更简单的使用sql驱动
+//只需要制定的使用的sql类型和驱动即可
+//Easier to use sql driver
+var serve = gsql.NewDrive(gsql.MySql, MySqlConnDrive).Config(100, 60)
+```
+
+``` golang
+//第二种使用方式
+//The second way to use
+//SQLSERVER
 func MSSqlDrive(s *datatable.Serve) (db *sql.DB, err error) {
     connString := fmt.Sprintf("server=%s;database=%s;user id=%s;password=%s;port=%d", s.Host, s.Database, s.Auth.User, s.Auth.Pass, s.Port)
     conn, err := mssql.NewAccessTokenConnector(connString,
@@ -19,26 +38,22 @@ func MSSqlDrive(s *datatable.Serve) (db *sql.DB, err error) {
         return
     }
     db = sql.OpenDB(conn)
-    err = db.Ping()
     return
 }
+//MYSQL
 func MySqlDrive(s *datatable.Serve) (db *sql.DB, err error) {
     connString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8", s.Auth.User, s.Auth.Pass, s.Host, s.Port, s.Database)
     db, err = sql.Open("mysql", connString)
-    if err != nil {
-        return
-    }
-    err = db.Ping()
-        return
-    }
 }
+//使用用户密码后调用驱动
+//Call the sql driver after using the user password
+var serve = gsql.NewServer("host", 3306).
+	Database(gsql.MySql, "database").
+	Login("user", "password").
+	Config(connectMax, timeout).NewDrive(MySqlDrive)
 ```
 
-``` golang
-var serve = gsql.NewServer("127.0.0.1", 3306, "database", gsql.MySql).
-    NewAuth("username", "password").
-    NewConfig(100, 60).Drive(MySqlDrive)
-```
+
 
 ``` golang
 type Options struct {
