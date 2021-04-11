@@ -61,7 +61,6 @@ func (s *Serve) query(command string, args ...interface{}) (*sql.Rows, error) {
 			return nil, err
 		}
 	}
-	defer s.close()
 	return s.conn.Query(command, args...)
 }
 
