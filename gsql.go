@@ -47,23 +47,24 @@ type Serve struct {
 	chs chan *ORM
 }
 
-func NewServerAuth(host string, port int, database, user, pass string, baseType DatabaseType) *Serve {
-	return NewServer(host, port, database, baseType).NewAuth(user, pass)
-}
-
-func NewServer(host string, port int, database string, baseType DatabaseType) *Serve {
-	serve := &datatable.Serve{Host: host, Port: port, Database: database, ConnectMax: runtime.NumCPU() * 2, Timeout: 60}
+func NewServer(host string, port int) *Serve {
+	serve := &datatable.Serve{Host: host, Port: port, ConnectMax: runtime.NumCPU() * 2, Timeout: 60}
 	server := &Serve{Serve: serve}
-	switch baseType {
-	case MySql:
-		serve.ISQL = &mysqls.Serve{Serve: serve}
-	case MSSql:
-		serve.ISQL = &mssqls.Serve{Serve: serve}
-	}
 	return server
 }
 
-func (s *Serve) NewConfig(connectMax, timeout int) *Serve {
+func (s *Serve) Database(baseType DatabaseType, database string) *Serve {
+	s.Serve.Database = database
+	switch baseType {
+	case MySql:
+		s.ISQL = &mysqls.Serve{Serve: s.Serve}
+	case MSSql:
+		s.ISQL = &mssqls.Serve{Serve: s.Serve}
+	}
+	return s
+}
+
+func (s *Serve) Config(connectMax, timeout int) *Serve {
 	if connectMax > 0 {
 		s.ConnectMax = connectMax
 	}
@@ -74,7 +75,7 @@ func (s *Serve) NewConfig(connectMax, timeout int) *Serve {
 }
 
 //
-func (s *Serve) NewAuth(user, pass string) *Serve {
+func (s *Serve) Login(user, pass string) *Serve {
 	if s.Auth == nil {
 		s.Auth = &datatable.Auth{User: user, Pass: pass}
 	} else {
