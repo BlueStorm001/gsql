@@ -53,6 +53,15 @@ func NewServer(host string, port int) *Serve {
 	return server
 }
 
+func NewDrive(baseType DatabaseType, drive func() (db *sql.DB, err error)) *Serve {
+	serve := &datatable.Serve{ConnectMax: runtime.NumCPU() * 2, Timeout: 60, Auth: new(datatable.Auth)}
+	s := &Serve{Serve: serve}
+	s.Database(baseType, "")
+	s.Drive = drive
+	s.DriveMode = 2
+	return s
+}
+
 func (s *Serve) Database(baseType DatabaseType, database string) *Serve {
 	s.Serve.Database = database
 	switch baseType {
@@ -85,8 +94,9 @@ func (s *Serve) Login(user, pass string) *Serve {
 	return s
 }
 
-func (s *Serve) Drive(f func(s *datatable.Serve) (db *sql.DB, err error)) *Serve {
-	s.Drives = f
+func (s *Serve) NewDrive(drive func(s *datatable.Serve) (db *sql.DB, err error)) *Serve {
+	s.DriveServe = drive
+	s.DriveMode = 1
 	return s
 }
 

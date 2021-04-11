@@ -72,9 +72,11 @@ type Serve struct {
 	//最大连接数
 	ConnectMax int //Maximum number of connections
 	//超时(秒)
-	Timeout int //Second/1
-	Error   error
-	Drives  func(s *Serve) (db *sql.DB, err error)
+	Timeout    int //Second/1
+	Error      error
+	DriveServe func(s *Serve) (db *sql.DB, err error) //mode 1
+	Drive      func() (db *sql.DB, err error)         // mode 2
+	DriveMode  int
 }
 
 type Column struct {

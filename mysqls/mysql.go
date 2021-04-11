@@ -35,10 +35,14 @@ type Serve struct {
 }
 
 func (s *Serve) connect() error {
-	if s.Drives == nil {
-		return errors.New("drive error")
+	switch s.DriveMode {
+	case 1:
+		s.conn, s.Error = s.DriveServe(s.Serve)
+	case 2:
+		s.conn, s.Error = s.Drive()
+	default:
+		s.Error = errors.New("drive mode error")
 	}
-	s.conn, s.Error = s.Drives(s.Serve)
 	if s.Error != nil {
 		return s.Error
 	}
