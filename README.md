@@ -92,7 +92,7 @@ func main() {
 func main() {
     option := &Options{Id:1,Text:"test"}
     orm := serve.NewStruct("table_options", option)
-    if orm.Select("*").OrderBy("id desc").Pagination(20,1).Execute().Error == nil {
+    if orm.Select("*").OrderBy("id desc").Page(20,1).Execute().Error == nil {
         if orm.Result.RowsAffected > 0 {
             fmt.Println("row:", orm.Id, option.Id, orm.Result.DataTable.Rows[0]["Id"], orm.TC)
         } else {
