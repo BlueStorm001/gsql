@@ -27,7 +27,7 @@ import (
 
 var serve = NewDrive(MySql, func() (db *sql.DB, err error) {
 	return
-}).Config(100, 60)
+}).Config(500, 60)
 
 type options struct {
 	Id    int    `json:"id,string" sql:"primary key,auto_increment 1000"`
@@ -88,4 +88,15 @@ func TestUpdate(t *testing.T) {
 	for k, v := range values {
 		t.Log("[", k, "=", v.Val, "]", v.Tag)
 	}
+}
+
+func Benchmark_Tester(b *testing.B) {
+	option := &options{Id: 1, Text: "test"}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			orm := serve.NewStruct("table_options", option)
+			orm.Select().Where("Id=?").OrderBy("id desc").Page(20, 1).GetSQL()
+			b.Log(orm.Id)
+		}
+	})
 }
