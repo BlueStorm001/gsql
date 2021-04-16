@@ -83,7 +83,6 @@ func (s *Serve) Config(connectMax, timeout int) *Serve {
 	return s
 }
 
-//
 func (s *Serve) Login(user, pass string) *Serve {
 	if s.Auth == nil {
 		s.Auth = &datatable.Auth{User: user, Pass: pass}
@@ -111,6 +110,9 @@ type ORM struct {
 }
 
 func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
+	if util.Verify(table) {
+		return &ORM{Error: errors.New("verification failed")}
+	}
 	if s.chs == nil {
 		s.mu.Lock()
 		if s.chs == nil {
@@ -296,6 +298,15 @@ func (o *ORM) Pagination(size int, page int) *ORM {
 		page = limit - size
 	}
 	return o.Limit(limit, page)
+}
+
+func (o *ORM) AddSql(command string) *ORM {
+	if util.Verify(command) {
+		o.Error = errors.New("verification failed")
+		return o
+	}
+	o.SqlCommand.Append(command)
+	return o
 }
 
 func (o *ORM) Execute() *ORM {
