@@ -300,7 +300,7 @@ func (o *ORM) Limit(limit int, offset ...int) *ORM {
 	return o
 }
 
-func (o *ORM) Pagination(size int, page int) *ORM {
+func (o *ORM) Page(size int, page int) *ORM {
 	limit := size
 	if page <= 1 {
 		page = 0
