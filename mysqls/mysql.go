@@ -210,9 +210,9 @@ func (s *Serve) GroupBy(orm *datatable.ORM, field string) error {
 
 func (s *Serve) Limit(orm *datatable.ORM, limit int, offset ...int) error {
 	if len(offset) > 0 {
-		orm.SqlCommand.AppendInt(offset[0]).Append(",").AppendInt(limit)
+		orm.SqlCommand.Append(" ").AppendInt(offset[0]).Append(",").AppendInt(limit)
 	} else {
-		orm.SqlCommand.AppendInt(limit)
+		orm.SqlCommand.Append(" ").AppendInt(limit)
 	}
 	return nil
 }

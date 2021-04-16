@@ -21,12 +21,13 @@
 package gsql
 
 import (
+	"database/sql"
 	"testing"
 )
 
-var serve = NewServer("127.0.0.1", 3306, "database", MySql).
-	NewAuth("username", "password").
-	NewConfig(100, 60)
+var serve = NewDrive(MySql, func() (db *sql.DB, err error) {
+	return
+}).Config(100, 60)
 
 type options struct {
 	Id    int    `json:"id,string" sql:"primary key,auto_increment 1000"`
@@ -34,16 +35,57 @@ type options struct {
 	Value string
 }
 
-func TestSql(t *testing.T) {
+func TestCount(t *testing.T) {
 	option := &options{Id: 1, Text: "test"}
 	orm := serve.NewStruct("table_options", option)
-	if orm.Select().Where("Id=?").OrderBy("id desc").Execute().Error == nil {
-		if orm.Result.RowsAffected > 0 {
-			t.Log("row:", orm.Id, option.Id, orm.Result.DataTable.Rows[0]["Id"], orm.TC)
-		} else {
-			t.Log("row:", orm.Id, option.Id, "no data", orm.TC)
-		}
-	} else {
-		t.Log(orm.Error)
+	command, values := orm.Count().Where("Id=?").GetSQL()
+	t.Log("[", orm.Id, "]")
+	t.Log("[", command, "]")
+	for k, v := range values {
+		t.Log("[", k, "=", v.Val, "]", v.Tag)
+	}
+}
+
+func TestSelect(t *testing.T) {
+	option := &options{Id: 1, Text: "test"}
+	orm := serve.NewStruct("table_options", option)
+	command, values := orm.Select().Where("Id=?").OrderBy("id desc").Pagination(20, 1).GetSQL()
+	t.Log("[", orm.Id, "]")
+	t.Log("[", command, "]")
+	for k, v := range values {
+		t.Log("[", k, "=", v.Val, "]", v.Tag)
+	}
+}
+
+func TestGroup(t *testing.T) {
+	option := &options{Id: 1, Text: "test"}
+	orm := serve.NewStruct("table_options", option)
+	command, values := orm.Select("Text", "Count(1)", "max(Id)").Where("Id=?").GroupBy("Text").GetSQL()
+	t.Log("[", orm.Id, "]")
+	t.Log("[", command, "]")
+	for k, v := range values {
+		t.Log("[", k, "=", v.Val, "]", v.Tag)
+	}
+}
+
+func TestInsert(t *testing.T) {
+	option := &options{Id: 1, Text: "test"}
+	orm := serve.NewStruct("table_options", option)
+	command, values := orm.Insert().GetSQL()
+	t.Log("[", orm.Id, "]")
+	t.Log("[", command, "]")
+	for k, v := range values {
+		t.Log("[", k, "=", v.Val, "]", v.Tag)
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	option := &options{Id: 1, Text: "test"}
+	orm := serve.NewStruct("table_options", option)
+	command, values := orm.Update().Where("Id=?").GetSQL()
+	t.Log("[", orm.Id, "]")
+	t.Log("[", command, "]")
+	for k, v := range values {
+		t.Log("[", k, "=", v.Val, "]", v.Tag)
 	}
 }

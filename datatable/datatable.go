@@ -109,6 +109,7 @@ const (
 	Add
 	Set
 	Del
+	Count
 )
 
 type ORM struct {

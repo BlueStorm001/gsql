@@ -198,6 +198,17 @@ func (o *ORM) Select(columns ...string) *ORM {
 	return o
 }
 
+func (o *ORM) Count() *ORM {
+	if o.s.err() {
+		return o
+	}
+	o.mu.Lock()
+	o.ST = time.Now()
+	o.Mode = datatable.Get
+	o.Error = o.s.ISQL.Count(o.ORM)
+	return o
+}
+
 func (o *ORM) Insert(columns ...string) *ORM {
 	if o.s.err() {
 		return o
@@ -337,6 +348,14 @@ func (o *ORM) Execute() *ORM {
 		}
 	}
 	return o
+}
+
+func (o *ORM) GetSQL() (string, map[string]*datatable.Field) {
+	defer o.s.reset(o)
+	if o.s.err() {
+		return "error", nil
+	}
+	return o.SqlCommand.ToString(), o.SqlStructMap
 }
 
 func (o *ORM) GetStruct(inStruct interface{}) error {
