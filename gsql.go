@@ -100,23 +100,12 @@ func (s *Serve) NewDrive(drive func(s *datatable.Serve) (db *sql.DB, err error))
 	return s
 }
 
-type useMode int
-
-const (
-	not useMode = iota
-	get
-	add
-	set
-	del
-)
-
 type ORM struct {
 	*datatable.ORM
 	Error error
 	Id    int
 	ST    time.Time     //execution start time
 	TC    time.Duration //time consuming
-	mode  useMode
 	s     *Serve
 	mu    sync.Mutex
 }
@@ -202,7 +191,7 @@ func (o *ORM) Select(columns ...string) *ORM {
 	}
 	o.mu.Lock()
 	o.ST = time.Now()
-	o.mode = get
+	o.Mode = datatable.Get
 	o.Error = o.s.ISQL.Select(o.ORM, columns...)
 	return o
 }
@@ -216,7 +205,7 @@ func (o *ORM) Insert(columns ...string) *ORM {
 	}
 	o.mu.Lock()
 	o.ST = time.Now()
-	o.mode = add
+	o.Mode = datatable.Add
 	o.Error = o.s.ISQL.Insert(o.ORM)
 	return o
 }
@@ -237,7 +226,7 @@ func (o *ORM) Update(columns ...string) *ORM {
 	}
 	o.mu.Lock()
 	o.ST = time.Now()
-	o.mode = set
+	o.Mode = datatable.Set
 	o.Error = o.s.ISQL.Update(o.ORM)
 	return o
 }
@@ -255,7 +244,7 @@ func (o *ORM) Delete() *ORM {
 	}
 	o.mu.Lock()
 	o.ST = time.Now()
-	o.mode = del
+	o.Mode = datatable.Del
 	o.Error = o.s.ISQL.Delete(o.ORM)
 	return o
 }
@@ -272,12 +261,18 @@ func (o *ORM) OrderBy(field string) *ORM {
 	if o.s.err() {
 		return o
 	}
-	o.Error = o.s.ISQL.OrderBy(o.ORM, field)
+	if field != "" {
+		o.Error = o.s.ISQL.OrderBy(o.ORM, field)
+	}
 	return o
 }
 
 func (o *ORM) GroupBy(field string) *ORM {
 	if o.s.err() {
+		return o
+	}
+	if field == "" {
+		o.Error = errors.New("field is nil")
 		return o
 	}
 	o.Error = o.s.ISQL.GroupBy(o.ORM, field)
@@ -308,8 +303,8 @@ func (o *ORM) Execute() *ORM {
 	if o.s.err() {
 		return nil
 	}
-	switch o.mode {
-	case get:
+	switch o.Mode {
+	case datatable.Get:
 		dt, err := o.s.ISQL.DataTable(o.ORM)
 		if err == nil {
 			o.Result = &datatable.SqlResult{DataTable: dt}
@@ -320,7 +315,7 @@ func (o *ORM) Execute() *ORM {
 		} else {
 			o.Error = err
 		}
-	case add, set, del:
+	case datatable.Add, datatable.Set, datatable.Del:
 		res, err := o.s.ISQL.Execute(o.ORM)
 		if err == nil {
 			rowsAffected, _ := res.RowsAffected()
@@ -347,7 +342,7 @@ func (o *ORM) GetStruct(inStruct interface{}) error {
 	return nil
 }
 func (s *Serve) reset(orm *ORM) {
-	orm.mode = not
+	orm.Mode = datatable.Not
 	orm.SqlCommand.Reset()
 	orm.SqlValues = nil
 	orm.TC = time.Since(orm.ST)

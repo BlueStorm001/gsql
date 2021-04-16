@@ -25,11 +25,13 @@ import (
 	"errors"
 	"gsql/datatable"
 	"gsql/util"
+	"strings"
 )
 
 type Serve struct {
 	*datatable.Serve
 	conn *sql.DB
+	step int
 }
 
 func (s *Serve) connect() error {
@@ -72,7 +74,6 @@ func (s *Serve) exec(command string, args ...interface{}) (sql.Result, error) {
 			return nil, err
 		}
 	}
-	defer s.close()
 	return s.conn.Exec(command, args...)
 }
 
@@ -136,7 +137,7 @@ func (s *Serve) Insert(orm *datatable.ORM) error {
 	fieldStr := "("
 	valueStr := "("
 	for k, v := range orm.SqlStructMap {
-		if v.Tag == "PK" {
+		if v.Tag != "" && strings.Contains(v.Tag, "auto_increment") {
 			continue
 		}
 		if len(fieldStr) > 1 {
@@ -144,7 +145,7 @@ func (s *Serve) Insert(orm *datatable.ORM) error {
 			valueStr += ","
 		}
 		fieldStr += k
-		valueStr += "?"
+		valueStr += "@" + k
 		orm.SqlValues = append(orm.SqlValues, v.Val)
 	}
 	fieldStr += ")"
@@ -158,13 +159,13 @@ func (s *Serve) Update(orm *datatable.ORM) error {
 	orm.SqlCommand.Append(" UPDATE ").Append(orm.TableName).Append(" SET ")
 	var use bool
 	for k, v := range orm.SqlStructMap {
-		if v.Tag == "PK" {
+		if v.Tag != "" && strings.Contains(v.Tag, "auto_increment") {
 			continue
 		}
 		if use {
 			orm.SqlCommand.Append(",")
 		}
-		orm.SqlCommand.Append(k).Append("=?")
+		orm.SqlCommand.Append(k).Append("=@").Append(k)
 		orm.SqlValues = append(orm.SqlValues, v.Val)
 		use = true
 	}
@@ -198,21 +199,24 @@ func (s *Serve) Where(orm *datatable.ORM, wheres ...string) error {
 }
 
 func (s *Serve) OrderBy(orm *datatable.ORM, field string) error {
-	if field != "" {
-		orm.SqlCommand.Append(" ORDER BY ").Append(field)
-	}
+	s.step = 5
+	orm.SqlCommand.Append(" ORDER BY ").Append(field)
 	return nil
 }
 
 func (s *Serve) GroupBy(orm *datatable.ORM, field string) error {
-	if field != "" {
-		orm.SqlCommand.Append(" GROUP BY ").Append(field)
-	}
+	orm.SqlCommand.Append(" GROUP BY ").Append(field)
 	return nil
 }
 
-//Only supports version SQL SERVER 2012 and above
+// Limit Only supports version SQL SERVER 2012 and above
 func (s *Serve) Limit(orm *datatable.ORM, limit int, offset ...int) error {
+	if s.step != 5 {
+		for k := range orm.SqlStructMap {
+			_ = s.OrderBy(orm, k)
+			break
+		}
+	}
 	if len(offset) > 0 {
 		orm.SqlCommand.Append(" OFFSET ").AppendInt(offset[0]).Append(" ROWS FETCH NEXT ").AppendInt(limit).Append(" ROWS ONLY")
 	} else {
@@ -226,9 +230,11 @@ func (s *Serve) DataSet(orm *datatable.ORM) (*datatable.DataSet, error) {
 }
 
 func (s *Serve) DataTable(orm *datatable.ORM) (*datatable.DataTable, error) {
+	s.step = 0
 	return s.dataTable(orm.SqlCommand.String(), orm.SqlValues...)
 }
 
 func (s *Serve) Execute(orm *datatable.ORM) (sql.Result, error) {
+	s.step = 0
 	return s.exec(orm.SqlCommand.String(), orm.SqlValues...)
 }

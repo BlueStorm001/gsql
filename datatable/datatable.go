@@ -100,12 +100,23 @@ type DataSet struct {
 	Tables []*DataTable
 }
 
+type UseMode int
+
+const (
+	Not UseMode = iota
+	Get
+	Add
+	Set
+	Del
+)
+
 type ORM struct {
 	SqlCommand   *util.Builder
 	SqlValues    []interface{}
 	SqlStructMap map[string]*Field
 	TableName    string
 	Result       *SqlResult
+	Mode         UseMode
 }
 
 type SqlRows struct {

@@ -74,7 +74,6 @@ func (s *Serve) exec(command string, args ...interface{}) (sql.Result, error) {
 			return nil, err
 		}
 	}
-	defer s.close()
 	return s.conn.Exec(command, args...)
 }
 
@@ -200,16 +199,12 @@ func (s *Serve) Where(orm *datatable.ORM, wheres ...string) error {
 }
 
 func (s *Serve) OrderBy(orm *datatable.ORM, field string) error {
-	if field != "" {
-		orm.SqlCommand.Append(" ORDER BY ").Append(field)
-	}
+	orm.SqlCommand.Append(" ORDER BY ").Append(field)
 	return nil
 }
 
 func (s *Serve) GroupBy(orm *datatable.ORM, field string) error {
-	if field != "" {
-		orm.SqlCommand.Append(" GROUP BY ").Append(field)
-	}
+	orm.SqlCommand.Append(" GROUP BY ").Append(field)
 	return nil
 }
 
