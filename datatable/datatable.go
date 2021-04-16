@@ -80,8 +80,9 @@ type Serve struct {
 }
 
 type Column struct {
-	Name string
-	Type string
+	Name   string
+	Type   string
+	Length int64
 }
 
 type Field struct {
@@ -142,8 +143,8 @@ func (rows *SqlRows) GetDataSet() (ds *DataSet, err error) {
 }
 
 func (rows *SqlRows) GetDataTable() (dt *DataTable, err error) {
-	var columns []string
-	columns, err = rows.Columns()
+	var columns []*sql.ColumnType
+	columns, err = rows.ColumnTypes()
 	if err != nil {
 		return
 	}
@@ -155,26 +156,32 @@ func (rows *SqlRows) GetDataTable() (dt *DataTable, err error) {
 	dt = new(DataTable)
 	dt.Columns = make([]*Column, columnLen)
 	data := make([]interface{}, columnLen)
-	for i := range data { //为每一列初始化一个指针
+	for i := range data {
+		//为每一列初始化一个指针
+		//Initialize a pointer for each column
 		data[i] = new(interface{})
-		name := columns[i]
-		dt.Columns = append(dt.Columns, &Column{Name: name})
+		column := &Column{}
+		column.Name = columns[i].Name()
+		column.Type = columns[i].DatabaseTypeName()
+		column.Length, _ = columns[i].Length()
+		dt.Columns[i] = column
 	}
 	for rows.Next() {
 		if err = rows.Scan(data...); err != nil {
 			return nil, err
 		}
-		item := make(map[string]interface{})
+		row := make(map[string]interface{})
 		for i, d := range data {
+			name := dt.Columns[i].Name
 			value := *d.(*interface{})
 			switch r := value.(type) {
 			case []byte:
-				item[columns[i]] = util.BytToStr(r)
+				row[name] = util.BytToStr(r)
 			default:
-				item[columns[i]] = r //取实际类型
+				row[name] = r //取实际类型
 			}
 		}
-		dt.Rows = append(dt.Rows, item)
+		dt.Rows = append(dt.Rows, row)
 	}
 	dt.Count = len(dt.Rows)
 	return

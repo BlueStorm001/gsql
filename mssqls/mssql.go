@@ -146,7 +146,7 @@ func (s *Serve) Insert(orm *datatable.ORM) error {
 		}
 		fieldStr += k
 		valueStr += "@" + k
-		orm.SqlValues = append(orm.SqlValues, v.Val)
+		orm.SqlValues = append(orm.SqlValues, sql.Named(k, v.Val))
 	}
 	fieldStr += ")"
 	valueStr += ")"
@@ -166,7 +166,7 @@ func (s *Serve) Update(orm *datatable.ORM) error {
 			orm.SqlCommand.Append(",")
 		}
 		orm.SqlCommand.Append(k).Append("=@").Append(k)
-		orm.SqlValues = append(orm.SqlValues, v.Val)
+		orm.SqlValues = append(orm.SqlValues, sql.Named(k, v.Val))
 		use = true
 	}
 	return nil
@@ -187,11 +187,14 @@ func (s *Serve) Where(orm *datatable.ORM, wheres ...string) error {
 		if util.Verify(w) {
 			return errors.New("verification failed")
 		}
-		f := util.GetFieldName(w)
-		if v, ok := orm.SqlStructMap[f]; ok {
-			orm.SqlValues = append(orm.SqlValues, v.Val)
+		k := util.GetFieldName(w)
+		if v, ok := orm.SqlStructMap[k]; ok {
+			orm.SqlValues = append(orm.SqlValues, sql.Named(k, v.Val))
 		} else {
 			return errors.New("the query condition does not exist")
+		}
+		if strings.Contains(w, "?") {
+			w = strings.ReplaceAll(w, "?", "@"+k)
 		}
 		orm.SqlCommand.Append(" ").Append(w)
 	}
