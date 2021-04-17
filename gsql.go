@@ -101,12 +101,13 @@ func (s *Serve) NewDrive(drive func(s *datatable.Serve) (db *sql.DB, err error))
 
 type ORM struct {
 	*datatable.ORM
-	Error error
-	Id    int
-	ST    time.Time     //execution start time
-	TC    time.Duration //time consuming
-	s     *Serve
-	mu    sync.Mutex
+	Error    error
+	ErrorSQL string
+	Id       int
+	ST       time.Time     //execution start time
+	TC       time.Duration //time consuming
+	s        *Serve
+	mu       sync.Mutex
 }
 
 func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
@@ -346,6 +347,9 @@ func (o *ORM) Execute() *ORM {
 		} else {
 			o.Error = err
 		}
+	}
+	if o.Error != nil {
+		o.ErrorSQL = o.SqlCommand.ToString()
 	}
 	return o
 }
