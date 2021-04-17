@@ -25,7 +25,7 @@ import (
 	"testing"
 )
 
-var serve = NewDrive(MySql, func() (db *sql.DB, err error) {
+var serve = NewDrive(Clickhouse, func() (db *sql.DB, err error) {
 	return
 }).Config(500, 60)
 

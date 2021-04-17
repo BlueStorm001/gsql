@@ -23,6 +23,7 @@ package gsql
 import (
 	"database/sql"
 	"errors"
+	"gsql/clickhouse"
 	"gsql/datatable"
 	"gsql/mssqls"
 	"gsql/mysqls"
@@ -37,8 +38,9 @@ import (
 type DatabaseType string
 
 const (
-	MSSql DatabaseType = "MSSql"
-	MySql DatabaseType = "MySql"
+	MSSql      DatabaseType = "MSSql"
+	MySql      DatabaseType = "MySql"
+	Clickhouse DatabaseType = "Clickhouse"
 )
 
 type Serve struct {
@@ -69,6 +71,8 @@ func (s *Serve) Database(baseType DatabaseType, database string) *Serve {
 		s.ISQL = &mysqls.Serve{Serve: s.Serve}
 	case MSSql:
 		s.ISQL = &mssqls.Serve{Serve: s.Serve}
+	case Clickhouse:
+		s.ISQL = &clickhouse.Serve{Serve: s.Serve}
 	}
 	return s
 }
