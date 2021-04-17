@@ -26,6 +26,7 @@ import (
 	"gsql/datatable"
 	"gsql/util"
 	"strings"
+	"time"
 )
 
 type Serve struct {
@@ -144,8 +145,8 @@ func (s *Serve) Insert(orm *datatable.ORM) error {
 			valueStr += ","
 		}
 		fieldStr += k
-		valueStr += "?"
-		orm.SqlValues = append(orm.SqlValues, v.Val)
+		valueStr += "@" + k
+		orm.SqlValues = append(orm.SqlValues, sql.Named(k, v.Val))
 	}
 	fieldStr += ")"
 	valueStr += ")"
@@ -158,14 +159,11 @@ func (s *Serve) Update(orm *datatable.ORM) error {
 	orm.SqlCommand.Append(" ALTER TABLE ").Append(orm.TableName).Append(" UPDATE ")
 	var use bool
 	for k, v := range orm.SqlStructMap {
-		if v.Tag != "" && strings.Contains(v.Tag, "auto_increment") {
-			continue
-		}
 		if use {
 			orm.SqlCommand.Append(",")
 		}
-		orm.SqlCommand.Append(k).Append("=?")
-		orm.SqlValues = append(orm.SqlValues, v.Val)
+		orm.SqlCommand.Append(k).Append("=").Append(updateValue(v.Val))
+		//orm.SqlValues = append(orm.SqlValues, v.Val)
 		use = true
 	}
 	return nil
@@ -188,10 +186,15 @@ func (s *Serve) Where(orm *datatable.ORM, wheres ...string) error {
 		}
 		f := util.GetFieldName(w)
 		if v, ok := orm.SqlStructMap[f]; ok {
-			orm.SqlValues = append(orm.SqlValues, v.Val)
+			if orm.Mode == datatable.Set {
+				w = strings.Replace(w, "?", updateValue(v.Val), 1)
+			} else {
+				orm.SqlValues = append(orm.SqlValues, v.Val)
+			}
 		} else {
 			return errors.New("the query condition does not exist")
 		}
+
 		orm.SqlCommand.Append(" ").Append(w)
 	}
 	return nil
@@ -209,9 +212,9 @@ func (s *Serve) GroupBy(orm *datatable.ORM, field string) error {
 
 func (s *Serve) Limit(orm *datatable.ORM, limit int, offset ...int) error {
 	if len(offset) > 0 {
-		orm.SqlCommand.Append(" ").AppendInt(offset[0]).Append(",").AppendInt(limit)
+		orm.SqlCommand.Append(" LIMIT ").AppendInt(offset[0]).Append(",").AppendInt(limit)
 	} else {
-		orm.SqlCommand.Append(" ").AppendInt(limit)
+		orm.SqlCommand.Append(" LIMIT ").AppendInt(limit)
 	}
 	return nil
 }
@@ -224,6 +227,77 @@ func (s *Serve) DataTable(orm *datatable.ORM) (*datatable.DataTable, error) {
 	return s.dataTable(orm.SqlCommand.String(), orm.SqlValues...)
 }
 
+func (s *Serve) insert(command string, args ...interface{}) (sql.Result, error) {
+	if s.conn == nil {
+		if err := s.connect(); err != nil {
+			return nil, err
+		}
+	}
+	var tx *sql.Tx
+	var stmt *sql.Stmt
+	var res sql.Result
+	var err error
+	if tx, err = s.conn.Begin(); err != nil {
+		return nil, err
+	}
+	if stmt, err = tx.Prepare(command); err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+	if res, err = stmt.Exec(args...); err != nil {
+		return nil, err
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 func (s *Serve) Execute(orm *datatable.ORM) (sql.Result, error) {
-	return s.exec(orm.SqlCommand.String(), orm.SqlValues...)
+	switch orm.Mode {
+	case datatable.Add:
+		return s.insert(orm.SqlCommand.String(), orm.SqlValues...)
+	default:
+		return s.exec(orm.SqlCommand.String(), orm.SqlValues...)
+	}
+}
+
+func convertSQL(v string) string {
+	v = strings.Replace(v, `\`, `\\`, -1)
+	v = strings.Replace(v, "'", "\\'", -1)
+	return v
+}
+
+func updateValue(value interface{}) string {
+	switch v := value.(type) {
+	case float32:
+		return "toFloat32(" + util.ToString(v) + ")"
+	case float64:
+		return "toFloat64(" + util.ToString(v) + ")"
+	case int, int8, int16, int32, uint, uint8, uint16, uint32:
+		return util.ToString(v)
+	case int64:
+		return "toInt64(" + util.ToString(v) + ")"
+	case uint64:
+		return "toUInt64(" + util.ToString(v) + ")"
+	case string:
+		return "'" + convertSQL(v) + "'"
+	case bool:
+		if v {
+			return "1"
+		}
+		return "0"
+	case nil:
+		return "null"
+	case []byte:
+		vv := util.BytToStr(v)
+		if util.Verify(vv) {
+			return "xxx"
+		}
+		return vv
+	case time.Time:
+		return "toDateTime('" + util.ToDateTimeStr(v) + "')"
+	default:
+		return "''"
+	}
 }
