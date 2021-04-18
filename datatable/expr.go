@@ -153,11 +153,34 @@ func (s *Stmt) lr(value interface{}, op ...string) *Stmt {
 
 func lex(buf []byte) (tokens []*token) {
 	current := token{}
+	var do bool
+	var escape bool
 	for _, c := range buf {
 		switch c {
 		case '\n':
 			continue
+		case '\\':
+			if do {
+				escape = true
+			}
+			continue
+		case '\'':
+			if do {
+				if escape {
+					current.value += string(c)
+					escape = false
+				} else {
+					do = false
+				}
+			} else {
+				do = true
+			}
+			continue
 		case ' ', '=', '>', '<', '!', '(', ')':
+			if do {
+				current.value += string(c)
+				continue
+			}
 			if current.value != "" {
 				curCopy := current
 				tokens = append(tokens, &curCopy)
