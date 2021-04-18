@@ -167,8 +167,8 @@ func lex(buf []byte) (tokens []*token) {
 		case '\'':
 			if do {
 				if escape {
-					current.value += string(c)
 					escape = false
+					current.value += string(c)
 				} else {
 					do = false
 				}
