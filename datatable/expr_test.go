@@ -26,12 +26,12 @@ import (
 
 func TestExpr(t *testing.T) {
 	valid := []string{
-		"id=1 and code=2",
-		"(id=1 and code=2) or (id=2 and code=3)",
-		"name='wen' and ( code1=1 or code2=2 ) and title=3",
-		"name='wen' and (status1=1 or status2=2 or ( code1=1 and code2=2 ) )",
-		"(name='wen' or name='wu' or(name='dong' and status=1 or(code=3 and code=4 and (ok=6 or ok=7) ) ) ) and status=1",
-		"( ( code1=1 and code2=2 ) or status1=1 or status2=2)and name='wen' and (status1=1 or status2=2 or ( code1=1 and code2=2 ) )",
+		"a=1 and b=2",
+		"(a=1 and b=2) or (c=2 and d=3)",
+		"a='wen' and ( b=1 or c=2 ) and d=3",
+		"a='wen' and (b=1 or c=2 or ( d=1 and e=2 ) )",
+		"(a='wen' or b='wu' or(c='dong' and d=1 or(e=3 and f=4 and (g=6 or h=7) ) ) ) and i=1",
+		"( ( a=1 and b=2 ) or c=1 or d=2)and e='wen' and (f=1 or g=2 or ( h=1 and i=2 ) )",
 		"",
 	}
 	for i, s := range valid {

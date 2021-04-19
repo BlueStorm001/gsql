@@ -55,7 +55,6 @@ type Stmt struct {
 	Lh interface{}
 	Op string
 	Rh interface{}
-	Rs interface{}
 }
 
 type Expr struct {
