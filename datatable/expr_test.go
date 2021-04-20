@@ -35,7 +35,7 @@ func TestExpr(t *testing.T) {
 		"",
 	}
 	for i, s := range valid {
-		exp := Parse([]byte(s)) //(col=123 or name='wu') and (col1=321 or col2=111) and(status=1 or status=2)
-		t.Log(i, exp.Tree)
+		exp, _ := Where([]byte(s)) //(col=123 or name='wu') and (col1=321 or col2=111) and(status=1 or status=2)
+		t.Log(i, exp.WhereExpr)
 	}
 }

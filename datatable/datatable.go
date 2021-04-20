@@ -79,6 +79,14 @@ type Serve struct {
 	DriveMode  int
 }
 
+type FindKind uint
+
+const (
+	Normal FindKind = iota
+	LikeMode
+	RegXMode
+)
+
 type Column struct {
 	Name   string
 	Type   string
@@ -91,10 +99,11 @@ type Field struct {
 }
 
 type DataTable struct {
-	Name    string
-	Columns []*Column
-	Rows    []map[string]interface{}
-	Count   int
+	Name     string
+	Columns  []*Column
+	Rows     []map[string]interface{}
+	Count    int
+	FindMode FindKind
 }
 
 type DataSet struct {

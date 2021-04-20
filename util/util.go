@@ -21,7 +21,6 @@
 package util
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -30,7 +29,7 @@ import (
 	"unsafe"
 )
 
-//nocopy 转换string
+// BytToStr nocopy 转换string
 func BytToStr(src []byte) (dst string) {
 	s := (*reflect.SliceHeader)(unsafe.Pointer(&src))
 	d := (*reflect.StringHeader)(unsafe.Pointer(&dst))
@@ -39,14 +38,11 @@ func BytToStr(src []byte) (dst string) {
 	return
 }
 
-//exp: float:2保留两位小数
-func ToString(value interface{}, exp ...string) string {
+// ToString exp: float:2保留两位小数
+func ToString(value interface{}) string {
 	switch v := value.(type) {
 	case float32, float64:
 		f := ToFloat64(v)
-		if len(exp) > 0 {
-			return fmt.Sprintf("%."+exp[0]+"f", f)
-		}
 		return strconv.FormatFloat(f, 'f', -1, 64)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		f := ToInt64(v)
@@ -54,13 +50,6 @@ func ToString(value interface{}, exp ...string) string {
 	case []byte:
 		return BytToStr(v)
 	case string:
-		switch len(exp) {
-		case 1:
-			v = strings.Trim(v, exp[0])
-		case 2:
-			v = strings.TrimLeft(v, exp[0])
-			v = strings.TrimRight(v, exp[1])
-		}
 		return v
 	case bool:
 		if v {
@@ -70,21 +59,13 @@ func ToString(value interface{}, exp ...string) string {
 	case nil:
 		return ""
 	case time.Time:
-		format := "2006-01-02 15:04:05"
-		if len(exp) > 0 {
-			format = exp[0]
-		}
-		//2020-12-01 00:00:00
-		d := v.Format(format)
-		d = strings.Replace(d, " 00:00:00", "", -1)
-		return d
+		return v.Format("2006-01-02 15:04:05")
 	default:
-
 		return ""
 	}
 }
 
-func ToFloat64(value interface{}, def ...float64) float64 {
+func ToFloat64(value interface{}) float64 {
 	switch v := value.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		f := ToInt(v)
@@ -100,57 +81,23 @@ func ToFloat64(value interface{}, def ...float64) float64 {
 		return 0
 	case []byte:
 		str := BytToStr(v)
-		f, err := strconv.ParseFloat(str, 64)
-		if err != nil {
-			if len(def) > 0 {
-				return def[0]
-			}
-			return 0
-		}
+		f, _ := strconv.ParseFloat(str, 64)
 		return f
 	case string:
-		if v == "" {
-			if len(def) > 0 {
-				return def[0]
-			}
-			return 0
-		}
-		f, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			if len(def) > 0 {
-				return def[0]
-			}
-			return 0
-		}
+		f, _ := strconv.ParseFloat(v, 64)
 		return f
 	default:
-		if len(def) > 0 {
-			return def[0]
-		}
 		return 0
 	}
 }
 
-func ToInt(value interface{}, def ...int) int {
+func ToInt(value interface{}) int {
 	switch v := value.(type) {
 	case float64, float32:
 		f := ToFloat64(v)
-
 		return int(f)
 	case string:
-		if v == "" {
-			if len(def) > 0 {
-				return def[0]
-			}
-			return 0
-		}
-		f, err := strconv.Atoi(v)
-		if err != nil {
-			if len(def) > 0 {
-				return def[0]
-			}
-			return 0
-		}
+		f, _ := strconv.Atoi(v)
 		return f
 	case int:
 		return v
@@ -178,22 +125,44 @@ func ToInt(value interface{}, def ...int) int {
 		}
 		return 0
 	case []byte:
-		str := BytToStr(v)
-		f, err := strconv.Atoi(str)
-		if err != nil {
-			if len(def) > 0 {
-				return def[0]
-			}
-			return 0
-		}
+		f, _ := strconv.Atoi(BytToStr(v))
 		return f
 	default:
 		return 0
 	}
 }
 
-func ToInt64(value interface{}, def ...int) int64 {
-	return int64(ToInt(value, def...))
+func ToInt64(value interface{}) int64 {
+	return int64(ToInt(value))
+}
+
+func FormatFloat(value interface{}) (float64, bool) {
+	switch v := value.(type) {
+	case float64:
+		return v, true
+	case float32:
+		return float64(v), true
+	case int:
+		return float64(v), true
+	case int8:
+		return float64(v), true
+	case int16:
+		return float64(v), true
+	case int32:
+		return float64(v), true
+	case uint:
+		return float64(v), true
+	case uint8:
+		return float64(v), true
+	case uint16:
+		return float64(v), true
+	case uint32:
+		return float64(v), true
+	case uint64:
+		return float64(v), true
+	default:
+		return 0, false
+	}
 }
 
 func ToNowStr() string {
