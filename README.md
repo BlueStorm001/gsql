@@ -80,9 +80,11 @@ func main() {
     if orm.Select().Where("Id=?").OrderBy("id desc").Execute().Error == nil {
         if orm.Result.RowsAffected > 0 {
             fmt.Println("row:", orm.Id, option.Id, orm.Result.DataTable.Rows[0]["Id"], orm.TC)
+            
             //在结果集里进行搜索
             //Search in the result set
             dt := orm.Result.DataTable
+            
             // Where 条件匹配 (a=1 and b=2) or (c=2 and d=3) Condition match
             table := dt.Where("Text='CN' and (code='BJS' or code='SHA')").OrderBy("id") 
             for i, row := range table.Rows {
@@ -101,6 +103,7 @@ func main() {
                 newTable := dt.Where("name='" + row["name"] + "' and (code='BJS' or code='SHA')").OrderBy("id") //[id asc , name desc]...
                 fmt.Println(newTable)
             }
+            
         } else {
             fmt.Println("row:", orm.Id, option.Id, "no data", orm.TC)
         }
