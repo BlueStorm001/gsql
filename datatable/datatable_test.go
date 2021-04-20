@@ -37,13 +37,16 @@ func GetTestDataTable() *DataTable {
 		{"id": 7, "code": "MEL", "name": "US", "money": 3.99},
 		{"id": 1, "code": "TYO", "name": "CN", "money": 2.99},
 	}
+	for i := 10; i < 9999; i++ {
+		dt.Rows = append(dt.Rows, map[string]interface{}{"id": i, "code": "BJS", "name": "CN", "money": 1.23})
+	}
 	dt.Count = len(dt.Rows)
 	return dt
 }
 
 func TestDataTable(t *testing.T) {
 	dt := GetTestDataTable()
-	whereDT1 := dt.Where("name='CN' and (code='BJS' or id=3)").OrderBy("id") //[id asc , name desc]...
+	whereDT1 := dt.Where("id=99 or id >= 999").OrderBy("id") //[id asc , name desc]...
 	t.Log(whereDT1)
 	//Group By 分组
 	groupDT := dt.GroupBy("name")
@@ -67,7 +70,7 @@ func Benchmark_DataTable(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			dt := GetTestDataTable()
-			dt.Where("name='CN' or name='US'")
+			dt.Where("name='CN' or id=9999")
 		}
 	})
 }
