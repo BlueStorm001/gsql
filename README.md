@@ -1,5 +1,7 @@
 # gsql
+
 golang SQL ORM
+
 ``` golang
 import (
     "fmt"
@@ -53,8 +55,6 @@ var serve = gsql.NewServer("host", 3306).
 	Config(connectMax, timeout).NewDrive(MySqlDrive)
 ```
 
-
-
 ``` golang
 type Options struct {
     Id      int    `json:"id,string" sql:"primary key,auto_increment 1000"`
@@ -62,6 +62,7 @@ type Options struct {
     Value   string
 }
 ```
+
 ``` golang
 func main() {
     option := &Options{Id:1,Text:"test"}
@@ -79,6 +80,25 @@ func main() {
     if orm.Select().Where("Id=?").OrderBy("id desc").Execute().Error == nil {
         if orm.Result.RowsAffected > 0 {
             fmt.Println("row:", orm.Id, option.Id, orm.Result.DataTable.Rows[0]["Id"], orm.TC)
+           
+            // Where 条件匹配 (a=1 and b=2) or (c=2 and d=3) Condition match
+            table := dt.Where("Text='CN' and (code='BJS' or code='SHA')").OrderBy("id") 
+            for i, row := range table.Rows {
+                fmt.Println(i,row)
+            }
+            
+            // 使用模糊搜索 Use fuzzy search
+            table = dt.Like("name='CN%' and money=1.2%").OrderBy("id desc")
+            
+            // 使用正则表达式 Use regular expressions
+            table = dt.Find("code='[A-Z]{3}'").OrderBy("id desc")
+            
+            // Group By 分组
+            table = dt.GroupBy("name")
+            for i, row := range table.Rows {
+                newTable := dt.Where("name='" + row["name"] + "' and (code='BJS' or code='SHA')").OrderBy("id") //[id asc , name desc]...
+                fmt.Println(newTable)
+            }
         } else {
             fmt.Println("row:", orm.Id, option.Id, "no data", orm.TC)
         }
@@ -119,6 +139,7 @@ func main() {
     }
 }
 ```
+
 ``` golang
 func main() {
     option := &Options{Id:1,Text:"test"}
@@ -128,6 +149,7 @@ func main() {
     }
 }
 ```
+
 ``` golang
 func main() {
     option := &Options{Id:1,Text:"test"}
@@ -137,6 +159,7 @@ func main() {
     }
 }
 ```
+
 ``` golang
 func main() {
     option := &Options{Id:1,Text:"test"}
@@ -146,6 +169,7 @@ func main() {
     }
 }
 ```
+
 ``` golang
 func main() {
     option := &Options{Id:1,Text:"test"}
@@ -155,6 +179,7 @@ func main() {
     }
 }
 ```
+
 ``` golang
 func main() {
     option := &Options{Id:1,Text:"test"}
