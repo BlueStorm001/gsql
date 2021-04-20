@@ -81,8 +81,8 @@ func main() {
         if orm.Result.RowsAffected > 0 {
             fmt.Println("row:", orm.Id, option.Id, orm.Result.DataTable.Rows[0]["Id"], orm.TC)
             
-            //在结果集里进行搜索
-            //Search in the result set
+            // 在结果集里进行搜索
+            // Search in the result set
             dt := orm.Result.DataTable
             
             // Where 条件匹配 (a=1 and b=2) or (c=2 and d=3) Condition match
@@ -91,13 +91,16 @@ func main() {
                 fmt.Println(i,row)
             }
             
-            // 使用模糊搜索 Use fuzzy search
+            // 使用模糊搜索 
+            // Use fuzzy search
             table = dt.Like("name='CN%' and money=1.2%").OrderBy("id desc")
             
-            // 使用正则表达式 Use regular expressions
+            // 使用正则表达式 
+            // Use regular expressions
             table = dt.Find("code='[A-Z]{3}'").OrderBy("id desc")
             
-            // Group By 分组
+            // 分组
+            // Group
             table = dt.GroupBy("name")
             for i, row := range table.Rows {
                 newTable := dt.Where("name='" + row["name"] + "' and (code='BJS' or code='SHA')").OrderBy("id") //[id asc , name desc]...
