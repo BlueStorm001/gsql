@@ -15,8 +15,14 @@ func (dt *DataTable) wheres(query string) *DataTable {
 	dataTable := dt.match(exp.WhereExpr)
 	dataTable.Name = dt.Name
 	dataTable.Columns = dt.Columns
-	dataTable.FindMode = dt.FindMode
 	return dataTable
+}
+
+func (dt *DataTable) DeleteSymbolKey() *DataTable {
+	for _, row := range dt.Rows {
+		delete(row, "$key$")
+	}
+	return dt
 }
 
 func (dt *DataTable) match(w *Wheres) *DataTable {
@@ -46,24 +52,17 @@ func (dt *DataTable) logic(w *Wheres) *DataTable {
 		for _, dr := range getRows(w.Lh) {
 			field := getField(w.Lh)
 			if field != dr["$key$"] {
-				delete(dr, "$key$")
 				rows = append(rows, dr)
 			}
 		}
 	case "or":
 		lr := getRows(w.Lh)
 		if lr != nil {
-			for _, m := range lr {
-				delete(m, "$key$")
-				rows = append(rows, m)
-			}
+			rows = append(rows, lr...)
 		}
 		rr := getRows(w.Rh)
 		if rr != nil {
-			for _, m := range rr {
-				delete(m, "$key$")
-				rows = append(rows, m)
-			}
+			rows = append(rows, rr...)
 		}
 	}
 	return &DataTable{Count: len(rows), Rows: rows}
@@ -80,12 +79,12 @@ func (dt *DataTable) contrast(w *Wheres) *DataTable {
 		like bool
 		regx bool
 	)
-	switch dt.FindMode {
-	case LikeMode:
+	switch dt.mode {
+	case likeMode:
 		if strings.Contains(rhStr, "%") {
 			like = true
 		}
-	case RegXMode:
+	case regXMode:
 		regx = true
 	}
 	input := rhStr

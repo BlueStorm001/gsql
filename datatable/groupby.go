@@ -11,7 +11,7 @@ func (dt *DataTable) GroupBy(query string) *DataTable {
 	if count == 0 {
 		return dt
 	}
-	dataTable := &DataTable{Name: dt.Name, FindMode: dt.FindMode}
+	dataTable := &DataTable{Name: dt.Name}
 	for _, item := range exp.GroupExpr {
 		for _, column := range dt.Columns {
 			if column.Name == item.Name {

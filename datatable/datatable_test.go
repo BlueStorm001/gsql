@@ -35,7 +35,7 @@ func GetTestDataTable() *DataTable {
 		{"id": 3, "code": "SHA", "name": "CN", "money": 1.26},
 		{"id": 4, "code": "NYC", "name": "US", "money": 3.99},
 		{"id": 7, "code": "MEL", "name": "US", "money": 3.99},
-		{"id": 1, "code": "TYN", "name": "CNN", "money": 2.99},
+		{"id": 1, "code": "TYO", "name": "CN", "money": 2.99},
 	}
 	dt.Count = len(dt.Rows)
 	return dt
@@ -43,7 +43,7 @@ func GetTestDataTable() *DataTable {
 
 func TestDataTable(t *testing.T) {
 	dt := GetTestDataTable()
-	whereDT1 := dt.Where("name='CN' or name='US'").OrderBy("id") //[id asc , name desc]...
+	whereDT1 := dt.Where("name='CN' and (code='BJS' or id=3)").OrderBy("id") //[id asc , name desc]...
 	t.Log(whereDT1)
 	//Group By 分组
 	groupDT := dt.GroupBy("name")
@@ -61,4 +61,13 @@ func TestDataTable(t *testing.T) {
 	//使用正则表达式 Use regular expressions
 	findDT := dt.Find("code='[A-Z]{3}'").OrderBy("id desc")
 	t.Log(findDT)
+}
+
+func Benchmark_DataTable(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			dt := GetTestDataTable()
+			dt.Where("name='CN' or name='US'")
+		}
+	})
 }

@@ -79,12 +79,12 @@ type Serve struct {
 	DriveMode  int
 }
 
-type FindKind uint
+type findKind uint
 
 const (
-	Normal FindKind = iota
-	LikeMode
-	RegXMode
+	normal findKind = iota
+	likeMode
+	regXMode
 )
 
 type Column struct {
@@ -99,11 +99,11 @@ type Field struct {
 }
 
 type DataTable struct {
-	Name     string
-	Columns  []*Column
-	Rows     []map[string]interface{}
-	Count    int
-	FindMode FindKind
+	Name    string
+	Columns []*Column
+	Rows    []map[string]interface{}
+	Count   int
+	mode    findKind
 }
 
 type DataSet struct {
