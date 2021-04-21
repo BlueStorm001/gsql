@@ -40,6 +40,9 @@ func (dt *DataTable) GroupBy(query string) *DataTable {
 			}
 		}
 	}
+	if len(dataTable.Columns) == 0 {
+		return dt
+	}
 	var group = make(map[string]int)
 	for _, dr := range dt.Rows {
 		row := make(map[string]interface{})
