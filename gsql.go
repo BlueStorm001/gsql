@@ -395,7 +395,6 @@ func (s *Serve) reset(orm *ORM) {
 
 func (s *Serve) err() bool {
 	if s == nil {
-		s.Error = errors.New(msg(504))
 		return true
 	}
 	if s.ISQL == nil {
