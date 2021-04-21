@@ -23,8 +23,8 @@ package mssqls
 import (
 	"database/sql"
 	"errors"
-	"gsql/datatable"
-	"gsql/util"
+	"github.com/BlueStorm001/gsql/datatable"
+	"github.com/BlueStorm001/gsql/util"
 	"strings"
 )
 

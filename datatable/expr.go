@@ -22,7 +22,7 @@ package datatable
 
 import (
 	"errors"
-	"gsql/util"
+	"github.com/BlueStorm001/gsql/util"
 	"strings"
 )
 

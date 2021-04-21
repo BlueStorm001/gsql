@@ -23,7 +23,7 @@ package datatable
 import (
 	"database/sql"
 	"errors"
-	"gsql/util"
+	"github.com/BlueStorm001/gsql/util"
 )
 
 type ISQL interface {

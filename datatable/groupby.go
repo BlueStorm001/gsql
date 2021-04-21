@@ -20,7 +20,7 @@
 
 package datatable
 
-import "gsql/util"
+import "github.com/BlueStorm001/gsql/util"
 
 func (dt *DataTable) GroupBy(query string) *DataTable {
 	if dt.Count <= 1 {

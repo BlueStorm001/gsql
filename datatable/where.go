@@ -21,7 +21,7 @@
 package datatable
 
 import (
-	"gsql/util"
+	"github.com/BlueStorm001/gsql/util"
 	"regexp"
 	"strconv"
 	"strings"
