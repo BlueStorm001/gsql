@@ -437,7 +437,32 @@ func reflects(in interface{}) map[string]*datatable.Field {
 	switch mp := in.(type) {
 	case map[string]interface{}:
 		for k, v := range mp {
-			maps[k] = &datatable.Field{Tag: "", Val: v}
+			switch r := v.(type) {
+			case []string:
+				f := &datatable.Field{}
+				for i, s := range r {
+					switch i {
+					case 0:
+						f.Val = s
+					case 1:
+						f.Tag = s
+					default:
+						break
+					}
+				}
+				maps[k] = f
+			case []interface{}:
+				if len(r) == 2 {
+					maps[k] = &datatable.Field{Tag: util.ToString(r[1]), Val: r[0]}
+				} else {
+					maps[k] = &datatable.Field{Tag: "", Val: r[0]}
+				}
+			case *datatable.Field:
+				maps[k] = r
+			default:
+				maps[k] = &datatable.Field{Tag: "", Val: r}
+			}
+
 		}
 		return maps
 	}
