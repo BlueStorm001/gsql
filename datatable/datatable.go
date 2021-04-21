@@ -39,6 +39,8 @@ type ISQL interface {
 	GroupBy(orm *ORM, field string) error
 	Limit(orm *ORM, limit int, offset ...int) error
 	Execute(orm *ORM) (sql.Result, error)
+	Connect() error
+	Close() error
 }
 
 type Auth struct {
