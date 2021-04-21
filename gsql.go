@@ -209,7 +209,7 @@ func (o *ORM) Count() *ORM {
 	}
 	o.mu.Lock()
 	o.ST = time.Now()
-	o.Mode = datatable.Get
+	o.Mode = datatable.Count
 	o.Error = o.s.ISQL.Count(o.ORM)
 	return o
 }
@@ -331,13 +331,16 @@ func (o *ORM) Execute() *ORM {
 		return nil
 	}
 	switch o.Mode {
-	case datatable.Get:
+	case datatable.Get, datatable.Count:
 		dt, err := o.s.ISQL.DataTable(o.ORM)
 		if err == nil {
 			o.Result = &datatable.SqlResult{DataTable: dt}
 			if dt != nil {
 				o.Result.RowsAffected = int64(dt.Count)
 				o.Result.DataTable.Name = o.TableName
+				if o.Mode == datatable.Count && o.Result.RowsAffected > 0 {
+					o.Result.RowsAffected = util.ToInt64(dt.Rows[0]["count"])
+				}
 			}
 		} else {
 			o.Error = err
