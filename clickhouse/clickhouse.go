@@ -34,7 +34,7 @@ type Serve struct {
 	conn *sql.DB
 }
 
-func (s *Serve) connect() error {
+func (s *Serve) Connect() error {
 	switch s.DriveMode {
 	case 1:
 		s.conn, s.Error = s.DriveServe(s.Serve)
@@ -49,7 +49,7 @@ func (s *Serve) connect() error {
 	return s.conn.Ping()
 }
 
-func (s *Serve) close() error {
+func (s *Serve) Close() error {
 	var err error
 	if s.conn != nil {
 		if err = s.conn.Close(); err == nil {
@@ -61,7 +61,7 @@ func (s *Serve) close() error {
 
 func (s *Serve) query(command string, args ...interface{}) (*sql.Rows, error) {
 	if s.conn == nil {
-		if err := s.connect(); err != nil {
+		if err := s.Connect(); err != nil {
 			return nil, err
 		}
 	}
@@ -70,7 +70,7 @@ func (s *Serve) query(command string, args ...interface{}) (*sql.Rows, error) {
 
 func (s *Serve) exec(command string, args ...interface{}) (sql.Result, error) {
 	if s.conn == nil {
-		if err := s.connect(); err != nil {
+		if err := s.Connect(); err != nil {
 			return nil, err
 		}
 	}
@@ -229,7 +229,7 @@ func (s *Serve) DataTable(orm *datatable.ORM) (*datatable.DataTable, error) {
 
 func (s *Serve) insert(command string, args ...interface{}) (sql.Result, error) {
 	if s.conn == nil {
-		if err := s.connect(); err != nil {
+		if err := s.Connect(); err != nil {
 			return nil, err
 		}
 	}
