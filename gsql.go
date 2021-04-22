@@ -326,7 +326,9 @@ func (o *ORM) AddSql(command string) *ORM {
 }
 
 func (o *ORM) Execute() *ORM {
-	defer o.s.reset(o)
+	if o.s != nil {
+		defer o.s.reset(o)
+	}
 	if o.s.err() {
 		return nil
 	}
