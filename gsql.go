@@ -383,18 +383,19 @@ func (o *ORM) GetStruct(inStruct interface{}) error {
 	return nil
 }
 func (s *Serve) reset(orm *ORM) {
+	if s == nil {
+		return
+	}
 	orm.Mode = datatable.Not
 	orm.SqlCommand.Reset()
 	orm.SqlValues = nil
 	orm.TC = time.Since(orm.ST)
 	orm.mu.Unlock()
-	if s != nil {
-		select {
-		case s.chs <- orm:
-			break
-		default:
-			break
-		}
+	select {
+	case s.chs <- orm:
+		break
+	default:
+		break
 	}
 }
 
