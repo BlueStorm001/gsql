@@ -326,9 +326,7 @@ func (o *ORM) AddSql(command string) *ORM {
 }
 
 func (o *ORM) Execute() *ORM {
-	if o.s != nil {
-		defer o.s.reset(o)
-	}
+	defer o.s.reset(o)
 	if o.s.err() {
 		return nil
 	}
@@ -390,11 +388,13 @@ func (s *Serve) reset(orm *ORM) {
 	orm.SqlValues = nil
 	orm.TC = time.Since(orm.ST)
 	orm.mu.Unlock()
-	select {
-	case s.chs <- orm:
-		break
-	default:
-		break
+	if s != nil {
+		select {
+		case s.chs <- orm:
+			break
+		default:
+			break
+		}
 	}
 }
 
