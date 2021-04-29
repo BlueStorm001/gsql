@@ -336,6 +336,7 @@ func (o *ORM) AddSql(command string) *ORM {
 }
 
 func (o *ORM) Execute() *ORM {
+	defer o.s.reset(o)
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
@@ -368,7 +369,6 @@ func (o *ORM) Execute() *ORM {
 	if o.Error != nil {
 		o.ErrorSQL = o.SqlCommand.ToString()
 	}
-	o.s.reset(o)
 	return o
 }
 
@@ -391,10 +391,11 @@ func (o *ORM) GetStruct(inStruct interface{}) error {
 	return nil
 }
 func (s *Serve) reset(orm *ORM) {
-	if s == nil {
+	if s == nil || orm == nil {
 		return
 	}
 	orm.Mode = datatable.Not
+	orm.Error = nil
 	orm.SqlCommand.Reset()
 	orm.SqlValues = nil
 	orm.TC = time.Since(orm.ST)
