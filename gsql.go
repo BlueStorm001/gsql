@@ -110,6 +110,7 @@ type ORM struct {
 	Id       int
 	ST       time.Time     //execution start time
 	TC       time.Duration //time consuming
+	CT       bool
 	s        *Serve
 	mu       sync.Mutex
 }
@@ -143,12 +144,13 @@ func (s *Serve) GetORM() *ORM {
 	for i := 0; i < 10*s.Timeout; i++ {
 		select {
 		case c := <-s.chs:
+			c.CT = true
 			return c
 		default:
 			time.Sleep(time.Millisecond * 100)
 		}
 	}
-	return &ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: 0}
+	return &ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: 0, CT: true}
 }
 
 func (o *ORM) SetStruct(inStruct interface{}) *ORM {
@@ -201,6 +203,7 @@ func (o *ORM) Select(columns ...string) *ORM {
 	o.mu.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Get
+
 	o.Error = o.s.ISQL.Select(o.ORM, columns...)
 	return o
 }
@@ -392,7 +395,9 @@ func (o *ORM) GetStruct(inStruct interface{}) error {
 }
 
 func (o *ORM) Close() {
-	o.s.reset(o)
+	if o.CT {
+		o.s.reset(o)
+	}
 }
 
 func (s *Serve) reset(orm *ORM) {
@@ -400,6 +405,7 @@ func (s *Serve) reset(orm *ORM) {
 		return
 	}
 	orm.Mode = datatable.Not
+	orm.CT = false
 	orm.Error = nil
 	orm.SqlCommand.Reset()
 	orm.SqlValues = nil
