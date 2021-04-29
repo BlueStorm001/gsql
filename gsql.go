@@ -137,8 +137,8 @@ func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
 }
 
 func (s *Serve) GetORM() *ORM {
-	if s.err() {
-		return &ORM{Error: s.Error}
+	if err := s.error(); err != nil {
+		return &ORM{Error: err}
 	}
 	for i := 0; i < 10*s.Timeout; i++ {
 		select {
@@ -148,11 +148,12 @@ func (s *Serve) GetORM() *ORM {
 			time.Sleep(time.Millisecond * 100)
 		}
 	}
-	return &ORM{Error: errors.New("time out! max connections of reached")}
+	return &ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: 0}
 }
 
 func (o *ORM) SetStruct(inStruct interface{}) *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	o.SqlStructMap = reflects(inStruct)
@@ -193,7 +194,8 @@ func (o *ORM) ColumnExclude(columns ...string) *ORM {
 }
 
 func (o *ORM) Select(columns ...string) *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	o.mu.Lock()
@@ -204,7 +206,8 @@ func (o *ORM) Select(columns ...string) *ORM {
 }
 
 func (o *ORM) Count() *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	o.mu.Lock()
@@ -215,7 +218,8 @@ func (o *ORM) Count() *ORM {
 }
 
 func (o *ORM) Insert(columns ...string) *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	if len(columns) > 0 {
@@ -236,7 +240,8 @@ func (o *ORM) InsertExclude(columns ...string) *ORM {
 }
 
 func (o *ORM) Update(columns ...string) *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	if len(columns) > 0 {
@@ -257,7 +262,8 @@ func (o *ORM) UpdateExclude(columns ...string) *ORM {
 }
 
 func (o *ORM) Delete() *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	o.mu.Lock()
@@ -268,7 +274,8 @@ func (o *ORM) Delete() *ORM {
 }
 
 func (o *ORM) Where(wheres ...string) *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	o.Error = o.s.ISQL.Where(o.ORM, wheres...)
@@ -276,7 +283,8 @@ func (o *ORM) Where(wheres ...string) *ORM {
 }
 
 func (o *ORM) OrderBy(field string) *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	if field != "" {
@@ -286,7 +294,8 @@ func (o *ORM) OrderBy(field string) *ORM {
 }
 
 func (o *ORM) GroupBy(field string) *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	if field == "" {
@@ -298,7 +307,8 @@ func (o *ORM) GroupBy(field string) *ORM {
 }
 
 func (o *ORM) Limit(limit int, offset ...int) *ORM {
-	if o.s.err() {
+	if err := o.s.error(); err != nil {
+		o.Error = err
 		return o
 	}
 	o.Error = o.s.ISQL.Limit(o.ORM, limit, offset...)
@@ -326,9 +336,9 @@ func (o *ORM) AddSql(command string) *ORM {
 }
 
 func (o *ORM) Execute() *ORM {
-	defer o.s.reset(o)
-	if o.s.err() {
-		return nil
+	if err := o.s.error(); err != nil {
+		o.Error = err
+		return o
 	}
 	switch o.Mode {
 	case datatable.Get, datatable.Count:
@@ -358,20 +368,18 @@ func (o *ORM) Execute() *ORM {
 	if o.Error != nil {
 		o.ErrorSQL = o.SqlCommand.ToString()
 	}
+	o.s.reset(o)
 	return o
 }
 
 func (o *ORM) GetSQL() (string, map[string]*datatable.Field) {
-	defer o.s.reset(o)
-	if o.s.err() {
-		return "error", nil
-	}
+	o.s.reset(o)
 	return o.SqlCommand.ToString(), o.SqlStructMap
 }
 
 func (o *ORM) GetStruct(inStruct interface{}) error {
-	if o.s.err() {
-		return o.s.Error
+	if err := o.s.error(); err != nil {
+		return err
 	}
 	if o.Error != nil {
 		return o.Error
@@ -399,22 +407,20 @@ func (s *Serve) reset(orm *ORM) {
 	}
 }
 
-func (s *Serve) err() bool {
+func (s *Serve) error() error {
 	if s == nil {
-		return true
+		return errors.New(msg(504))
 	}
 	if s.ISQL == nil {
-		s.Error = errors.New(msg(502))
-		return true
+		return errors.New(msg(502))
 	}
 	if s.chs == nil {
-		s.Error = errors.New(msg(505))
-		return true
+		return errors.New(msg(505))
 	}
 	if s.Error != nil {
-		return true
+		return errors.New("[500]" + s.Error.Error())
 	}
-	return false
+	return nil
 }
 
 func msg(code int) string {
