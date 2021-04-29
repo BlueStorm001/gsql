@@ -390,6 +390,11 @@ func (o *ORM) GetStruct(inStruct interface{}) error {
 
 	return nil
 }
+
+func (o *ORM) Close() {
+	o.s.reset(o)
+}
+
 func (s *Serve) reset(orm *ORM) {
 	if s == nil || orm == nil {
 		return
