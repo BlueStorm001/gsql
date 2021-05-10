@@ -110,9 +110,10 @@ type ORM struct {
 	Id       int
 	ST       time.Time     //execution start time
 	TC       time.Duration //time consuming
-	CT       bool
-	s        *Serve
-	mu       sync.Mutex
+
+	s           *Serve
+	processLock sync.Mutex
+	chanState   bool
 }
 
 func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
@@ -144,13 +145,13 @@ func (s *Serve) GetORM() *ORM {
 	for i := 0; i < 10*s.Timeout; i++ {
 		select {
 		case c := <-s.chs:
-			c.CT = true
+			c.chanState = true
 			return c
 		default:
 			time.Sleep(time.Millisecond * 100)
 		}
 	}
-	return &ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: 0, CT: true}
+	return &ORM{Error: errors.New("maximum number of connections exceeded")} //&ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: 0, CT: true, processLock: new(util.Mutex)}
 }
 
 func (o *ORM) SetStruct(inStruct interface{}) *ORM {
@@ -164,7 +165,7 @@ func (o *ORM) SetStruct(inStruct interface{}) *ORM {
 
 func (o *ORM) ColumnUse(columns ...string) *ORM {
 	if len(o.SqlStructMap) > 0 && len(columns) > 0 {
-		o.mu.Lock()
+		o.processLock.Lock()
 		for k := range o.SqlStructMap {
 			var use bool
 			for _, column := range columns {
@@ -177,33 +178,33 @@ func (o *ORM) ColumnUse(columns ...string) *ORM {
 				delete(o.SqlStructMap, k)
 			}
 		}
-		o.mu.Unlock()
+		o.processLock.Unlock()
 	}
 	return o
 }
 
 func (o *ORM) ColumnExclude(columns ...string) *ORM {
 	if len(o.SqlStructMap) > 0 && len(columns) > 0 {
-		o.mu.Lock()
+		o.processLock.Lock()
 		for _, column := range columns {
 			if _, ok := o.SqlStructMap[column]; ok {
 				delete(o.SqlStructMap, column)
 			}
 		}
-		o.mu.Unlock()
+		o.processLock.Unlock()
 	}
 	return o
 }
 
 func (o *ORM) Select(columns ...string) *ORM {
+	if !o.chanState {
+		o = o.s.GetORM()
+	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
 	}
-	if !o.CT {
-		o = o.s.GetORM()
-	}
-	o.mu.Lock()
+	o.processLock.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Get
 
@@ -212,14 +213,14 @@ func (o *ORM) Select(columns ...string) *ORM {
 }
 
 func (o *ORM) Count() *ORM {
+	if !o.chanState {
+		o = o.s.GetORM()
+	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
 	}
-	if !o.CT {
-		o = o.s.GetORM()
-	}
-	o.mu.Lock()
+	o.processLock.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Count
 	o.Error = o.s.ISQL.Count(o.ORM)
@@ -227,17 +228,17 @@ func (o *ORM) Count() *ORM {
 }
 
 func (o *ORM) Insert(columns ...string) *ORM {
+	if !o.chanState {
+		o = o.s.GetORM()
+	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
 	}
-	if !o.CT {
-		o = o.s.GetORM()
-	}
 	if len(columns) > 0 {
 		o.ColumnUse(columns...)
 	}
-	o.mu.Lock()
+	o.processLock.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Add
 	o.Error = o.s.ISQL.Insert(o.ORM)
@@ -252,17 +253,17 @@ func (o *ORM) InsertExclude(columns ...string) *ORM {
 }
 
 func (o *ORM) Update(columns ...string) *ORM {
+	if !o.chanState {
+		o = o.s.GetORM()
+	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
 	}
-	if !o.CT {
-		o = o.s.GetORM()
-	}
 	if len(columns) > 0 {
 		o.ColumnUse(columns...)
 	}
-	o.mu.Lock()
+	o.processLock.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Set
 	o.Error = o.s.ISQL.Update(o.ORM)
@@ -277,14 +278,14 @@ func (o *ORM) UpdateExclude(columns ...string) *ORM {
 }
 
 func (o *ORM) Delete() *ORM {
+	if !o.chanState {
+		o = o.s.GetORM()
+	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
 	}
-	if !o.CT {
-		o = o.s.GetORM()
-	}
-	o.mu.Lock()
+	o.processLock.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Del
 	o.Error = o.s.ISQL.Delete(o.ORM)
@@ -409,8 +410,8 @@ func (o *ORM) GetStruct(inStruct interface{}) error {
 	return nil
 }
 
-func (o *ORM) Close() {
-	if o.CT {
+func (o *ORM) Dispose() {
+	if o.chanState {
 		o.s.reset(o)
 	}
 }
@@ -420,12 +421,12 @@ func (s *Serve) reset(orm *ORM) {
 		return
 	}
 	orm.Mode = datatable.Not
-	orm.CT = false
+	orm.chanState = false
 	orm.Error = nil
 	orm.SqlCommand.Reset()
 	orm.SqlValues = nil
 	orm.TC = time.Since(orm.ST)
-	orm.mu.Unlock()
+	orm.processLock.Unlock()
 	select {
 	case s.chs <- orm:
 		break
