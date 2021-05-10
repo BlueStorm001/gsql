@@ -207,7 +207,6 @@ func (o *ORM) Select(columns ...string) *ORM {
 	o.processLock.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Get
-
 	o.Error = o.s.ISQL.Select(o.ORM, columns...)
 	return o
 }
