@@ -105,14 +105,13 @@ func (s *Serve) NewDrive(drive func(s *datatable.Serve) (db *sql.DB, err error))
 
 type ORM struct {
 	*datatable.ORM
-	Error    error
-	ErrorSQL string
-	Id       int
-	ST       time.Time     //execution start time
-	TC       time.Duration //time consuming
-
+	Error       error
+	ErrorSQL    string
+	Id          int
+	ST          time.Time     //execution start time
+	TC          time.Duration //time consuming
 	s           *Serve
-	processLock sync.Mutex
+	processLock *util.Mutex
 	chanState   bool
 }
 
@@ -125,7 +124,7 @@ func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
 		if s.chs == nil {
 			s.chs = make(chan *ORM, s.ConnectMax)
 			for i := 0; i < s.ConnectMax; i++ {
-				s.chs <- &ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: i + 1}
+				s.chs <- &ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: i + 1, processLock: new(util.Mutex)}
 			}
 		}
 		s.mu.Unlock()
@@ -425,7 +424,9 @@ func (s *Serve) reset(orm *ORM) {
 	orm.SqlCommand.Reset()
 	orm.SqlValues = nil
 	orm.TC = time.Since(orm.ST)
-	orm.processLock.Unlock()
+	if orm.processLock.State {
+		orm.processLock.Unlock()
+	}
 	select {
 	case s.chs <- orm:
 		break
