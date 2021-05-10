@@ -200,6 +200,9 @@ func (o *ORM) Select(columns ...string) *ORM {
 		o.Error = err
 		return o
 	}
+	if !o.CT {
+		o = o.s.GetORM()
+	}
 	o.mu.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Get
@@ -213,6 +216,9 @@ func (o *ORM) Count() *ORM {
 		o.Error = err
 		return o
 	}
+	if !o.CT {
+		o = o.s.GetORM()
+	}
 	o.mu.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Count
@@ -224,6 +230,9 @@ func (o *ORM) Insert(columns ...string) *ORM {
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
+	}
+	if !o.CT {
+		o = o.s.GetORM()
 	}
 	if len(columns) > 0 {
 		o.ColumnUse(columns...)
@@ -247,6 +256,9 @@ func (o *ORM) Update(columns ...string) *ORM {
 		o.Error = err
 		return o
 	}
+	if !o.CT {
+		o = o.s.GetORM()
+	}
 	if len(columns) > 0 {
 		o.ColumnUse(columns...)
 	}
@@ -268,6 +280,9 @@ func (o *ORM) Delete() *ORM {
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
+	}
+	if !o.CT {
+		o = o.s.GetORM()
 	}
 	o.mu.Lock()
 	o.ST = time.Now()

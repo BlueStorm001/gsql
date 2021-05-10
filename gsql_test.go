@@ -27,7 +27,7 @@ import (
 
 var serve = NewDrive(Clickhouse, func() (db *sql.DB, err error) {
 	return
-}).Config(500, 60)
+}).Config(50, 60)
 
 type options struct {
 	Id    int    `json:"id,string" sql:"primary key,auto_increment 1000"`
@@ -39,6 +39,8 @@ func TestCount(t *testing.T) {
 	option := &options{Id: 1, Text: "test"}
 	orm := serve.NewStruct("table_options", option)
 	command, values := orm.Count().Where("Id=?").GetSQL()
+	command, values = orm.Select().Where("Id=?").GetSQL()
+
 	t.Log("[", orm.Id, "]")
 	t.Log("[", command, "]")
 	for k, v := range values {
