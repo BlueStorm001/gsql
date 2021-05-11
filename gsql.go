@@ -195,10 +195,8 @@ func (o *ORM) ColumnExclude(columns ...string) *ORM {
 	return o
 }
 
-func (o *ORM) Select(columns ...string) *ORM {
-	if !o.chanState {
-		o = o.new()
-	}
+func (orm *ORM) Select(columns ...string) *ORM {
+	o := orm.get()
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
@@ -210,10 +208,8 @@ func (o *ORM) Select(columns ...string) *ORM {
 	return o
 }
 
-func (o *ORM) Count() *ORM {
-	if !o.chanState {
-		o = o.new()
-	}
+func (orm *ORM) Count() *ORM {
+	o := orm.get()
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
@@ -225,10 +221,8 @@ func (o *ORM) Count() *ORM {
 	return o
 }
 
-func (o *ORM) Insert(columns ...string) *ORM {
-	if !o.chanState {
-		o = o.new()
-	}
+func (orm *ORM) Insert(columns ...string) *ORM {
+	o := orm.get()
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
@@ -250,10 +244,8 @@ func (o *ORM) InsertExclude(columns ...string) *ORM {
 	return o.Insert()
 }
 
-func (o *ORM) Update(columns ...string) *ORM {
-	if !o.chanState {
-		o = o.new()
-	}
+func (orm *ORM) Update(columns ...string) *ORM {
+	o := orm.get()
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
@@ -275,10 +267,8 @@ func (o *ORM) UpdateExclude(columns ...string) *ORM {
 	return o.Update()
 }
 
-func (o *ORM) Delete() *ORM {
-	if !o.chanState {
-		o = o.new()
-	}
+func (orm *ORM) Delete() *ORM {
+	o := orm.get()
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
@@ -408,7 +398,10 @@ func (o *ORM) GetStruct(inStruct interface{}) error {
 	return nil
 }
 
-func (o *ORM) new() *ORM {
+func (o *ORM) get() *ORM {
+	if o.chanState {
+		return o
+	}
 	orm := o.s.GetORM()
 	orm.SqlStructMap = o.SqlStructMap
 	orm.TableName = o.TableName
