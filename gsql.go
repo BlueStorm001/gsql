@@ -197,7 +197,7 @@ func (o *ORM) ColumnExclude(columns ...string) *ORM {
 
 func (o *ORM) Select(columns ...string) *ORM {
 	if !o.chanState {
-		o = o.s.GetORM()
+		o = o.new()
 	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
@@ -212,7 +212,7 @@ func (o *ORM) Select(columns ...string) *ORM {
 
 func (o *ORM) Count() *ORM {
 	if !o.chanState {
-		o = o.s.GetORM()
+		o = o.new()
 	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
@@ -227,7 +227,7 @@ func (o *ORM) Count() *ORM {
 
 func (o *ORM) Insert(columns ...string) *ORM {
 	if !o.chanState {
-		o = o.s.GetORM()
+		o = o.new()
 	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
@@ -252,7 +252,7 @@ func (o *ORM) InsertExclude(columns ...string) *ORM {
 
 func (o *ORM) Update(columns ...string) *ORM {
 	if !o.chanState {
-		o = o.s.GetORM()
+		o = o.new()
 	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
@@ -277,7 +277,7 @@ func (o *ORM) UpdateExclude(columns ...string) *ORM {
 
 func (o *ORM) Delete() *ORM {
 	if !o.chanState {
-		o = o.s.GetORM()
+		o = o.new()
 	}
 	if err := o.s.error(); err != nil {
 		o.Error = err
@@ -406,6 +406,13 @@ func (o *ORM) GetStruct(inStruct interface{}) error {
 	}
 
 	return nil
+}
+
+func (o *ORM) new() *ORM {
+	orm := o.s.GetORM()
+	orm.SqlStructMap = o.SqlStructMap
+	orm.TableName = o.TableName
+	return orm
 }
 
 func (o *ORM) Dispose() {
