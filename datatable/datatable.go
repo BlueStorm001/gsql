@@ -49,6 +49,9 @@ type Auth struct {
 }
 
 type SqlResult struct {
+	//error
+	Error error
+
 	//数据集合
 	DataTable *DataTable
 
@@ -128,7 +131,6 @@ type ORM struct {
 	SqlValues    []interface{}
 	SqlStructMap map[string]*Field
 	TableName    string
-	Result       *SqlResult
 	Mode         UseMode
 }
 

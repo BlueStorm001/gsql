@@ -105,14 +105,15 @@ func (s *Serve) NewDrive(drive func(s *datatable.Serve) (db *sql.DB, err error))
 
 type ORM struct {
 	*datatable.ORM
-	Error       error
-	ErrorSQL    string
-	Id          int
-	ST          time.Time     //execution start time
-	TC          time.Duration //time consuming
-	s           *Serve
-	processLock *util.Mutex
-	chanState   bool
+	Error        error
+	ErrorSQL     string
+	Id           int
+	ST           time.Time     //execution start time
+	TC           time.Duration //time consuming
+	s            *Serve
+	processLock  *util.Mutex
+	chanState    bool
+	chanComplete chan struct{}
 }
 
 func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
@@ -124,7 +125,7 @@ func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
 		if s.chs == nil {
 			s.chs = make(chan *ORM, s.ConnectMax)
 			for i := 0; i < s.ConnectMax; i++ {
-				s.chs <- &ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: i + 1, processLock: new(util.Mutex)}
+				s.chs <- &ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: i + 1, processLock: new(util.Mutex), chanComplete: make(chan struct{})}
 			}
 		}
 		s.mu.Unlock()
@@ -145,12 +146,20 @@ func (s *Serve) GetORM() *ORM {
 		select {
 		case c := <-s.chs:
 			c.chanState = true
+			go func(orm *ORM) {
+				select {
+				case <-orm.chanComplete:
+					return
+				case <-time.After(time.Second * time.Duration(s.Timeout)):
+					orm.Dispose()
+				}
+			}(c)
 			return c
 		default:
 			time.Sleep(time.Millisecond * 100)
 		}
 	}
-	return &ORM{Error: errors.New("maximum number of connections exceeded")} //&ORM{ORM: &datatable.ORM{SqlCommand: util.NewBuilder()}, s: s, Id: 0, CT: true, processLock: new(util.Mutex)}
+	return &ORM{Error: errors.New("maximum number of connections exceeded")}
 }
 
 func (o *ORM) SetStruct(inStruct interface{}) *ORM {
@@ -342,41 +351,48 @@ func (o *ORM) AddSql(command string) *ORM {
 	return o
 }
 
-func (o *ORM) Execute() *ORM {
+func (o *ORM) Execute() *datatable.SqlResult {
+	o.chanComplete <- struct{}{}
 	defer o.s.reset(o)
+	result := &datatable.SqlResult{}
 	if err := o.s.error(); err != nil {
-		o.Error = err
-		return o
+		result.Error = err
+		return result
 	}
 	switch o.Mode {
 	case datatable.Get, datatable.Count:
 		dt, err := o.s.ISQL.DataTable(o.ORM)
 		if err == nil {
-			o.Result = &datatable.SqlResult{DataTable: dt}
 			if dt != nil {
-				o.Result.RowsAffected = int64(dt.Count)
-				o.Result.DataTable.Name = o.TableName
-				if o.Mode == datatable.Count && o.Result.RowsAffected > 0 {
-					o.Result.RowsAffected = util.ToInt64(dt.Rows[0]["count"])
+				result.DataTable = dt
+				result.RowsAffected = int64(dt.Count)
+				result.DataTable.Name = o.TableName
+				if o.Mode == datatable.Count && result.RowsAffected > 0 {
+					result.RowsAffected = util.ToInt64(dt.Rows[0]["count"])
 				}
 			}
 		} else {
-			o.Error = err
+			result.Error = err
 		}
 	case datatable.Add, datatable.Set, datatable.Del:
 		res, err := o.s.ISQL.Execute(o.ORM)
 		if err == nil {
-			rowsAffected, _ := res.RowsAffected()
-			lastInsertId, _ := res.LastInsertId()
-			o.Result = &datatable.SqlResult{LastInsertId: lastInsertId, RowsAffected: rowsAffected}
+			result.RowsAffected, _ = res.RowsAffected()
+			result.LastInsertId, _ = res.LastInsertId()
 		} else {
-			o.Error = err
+			result.Error = err
 		}
 	}
-	if o.Error != nil {
+	if result.Error != nil {
 		o.ErrorSQL = o.SqlCommand.ToString()
 	}
-	return o
+	return result
+}
+
+func (o *ORM) Dispose() {
+	if o.chanState {
+		o.s.reset(o)
+	}
 }
 
 func (o *ORM) GetSQL() (string, map[string]*datatable.Field) {
@@ -391,9 +407,9 @@ func (o *ORM) GetStruct(inStruct interface{}) error {
 	if o.Error != nil {
 		return o.Error
 	}
-	if o.Result.RowsAffected == 0 {
-		return errors.New("datatable rows count 0")
-	}
+	//if o.Result.RowsAffected == 0 {
+	//	return errors.New("datatable rows count 0")
+	//}
 
 	return nil
 }
@@ -406,12 +422,6 @@ func (o *ORM) get() *ORM {
 	orm.SqlStructMap = o.SqlStructMap
 	orm.TableName = o.TableName
 	return orm
-}
-
-func (o *ORM) Dispose() {
-	if o.chanState {
-		o.s.reset(o)
-	}
 }
 
 func (s *Serve) reset(orm *ORM) {
