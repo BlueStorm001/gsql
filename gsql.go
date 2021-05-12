@@ -352,7 +352,9 @@ func (o *ORM) AddSql(command string) *ORM {
 }
 
 func (o *ORM) Execute() *datatable.SqlResult {
-	o.chanComplete <- struct{}{}
+	if o.chanState {
+		o.chanComplete <- struct{}{}
+	}
 	defer o.s.reset(o)
 	result := &datatable.SqlResult{}
 	if err := o.s.error(); err != nil {
