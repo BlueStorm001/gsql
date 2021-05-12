@@ -14,7 +14,7 @@ import (
 ``` golang
 //使用方式（推荐）
 //The first way to use
-//MYSQL
+//MYSQL test
 func MySqlConnDrive() (db *sql.DB, err error) {
 	connString := "user:pass@tcp(host:3306)/database?charset=utf8"
 	db, err = sql.Open("mysql", connString)
@@ -23,6 +23,9 @@ func MySqlConnDrive() (db *sql.DB, err error) {
 //更简单的使用sql驱动
 //只需要制定的使用的sql类型和驱动即可
 //Easier to use sql driver
+//gsql.MySql 
+//gsql.MSSql
+//gsql.Clickhouse
 var serve = gsql.NewDrive(gsql.MySql, MySqlConnDrive).Config(100, 60)
 ```
 
