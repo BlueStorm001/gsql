@@ -347,6 +347,7 @@ func (o *ORM) AddSql(command string) *ORM {
 		o.Error = errors.New("verification failed")
 		return o
 	}
+	command = strings.Replace(command, "\"", "'", -1)
 	o.SqlCommand.Append(command)
 	return o
 }
