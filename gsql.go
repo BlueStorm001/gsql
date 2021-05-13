@@ -118,6 +118,10 @@ type ORM struct {
 	chanComplete chan struct{}
 }
 
+type SqlResult struct {
+	*datatable.SqlResult
+}
+
 func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
 	if util.Verify(table) {
 		return &ORM{Error: errors.New("verification failed")}
@@ -135,7 +139,7 @@ func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
 	orm := s.GetORM()
 	if orm.Error == nil {
 		orm.TableName = table
-		orm.SqlStructMap = reflects(inStruct)
+		orm.SqlStructMap = getStruct(inStruct)
 	}
 	return orm
 }
@@ -169,7 +173,7 @@ func (o *ORM) SetStruct(inStruct interface{}) *ORM {
 		o.Error = err
 		return o
 	}
-	o.SqlStructMap = reflects(inStruct)
+	o.SqlStructMap = getStruct(inStruct)
 	return o
 }
 
@@ -354,12 +358,12 @@ func (o *ORM) AddSql(command string) *ORM {
 	return o
 }
 
-func (o *ORM) Execute() *datatable.SqlResult {
+func (o *ORM) Execute() *SqlResult {
 	if o.chanState {
 		o.chanComplete <- struct{}{}
 	}
 	defer o.s.reset(o)
-	result := &datatable.SqlResult{}
+	result := &SqlResult{SqlResult: new(datatable.SqlResult)}
 	if err := o.s.error(); err != nil {
 		result.Error = err
 		return result
@@ -405,18 +409,11 @@ func (o *ORM) GetSQL() (string, map[string]*datatable.Field) {
 	return o.SqlCommand.ToString(), o.SqlStructMap
 }
 
-func (o *ORM) GetStruct(inStruct interface{}) error {
-	if err := o.s.error(); err != nil {
-		return err
+func (r *SqlResult) GetStruct(inStruct interface{}) error {
+	if r.RowsAffected == 0 {
+		return errors.New("data line is empty")
 	}
-	if o.Error != nil {
-		return o.Error
-	}
-	//if o.Result.RowsAffected == 0 {
-	//	return errors.New("datatable rows count 0")
-	//}
-
-	return nil
+	return setStruct(inStruct, r.DataTable.Rows)
 }
 
 func (o *ORM) get() *ORM {
@@ -483,7 +480,7 @@ func msg(code int) string {
 	}
 }
 
-func reflects(in interface{}) map[string]*datatable.Field {
+func getStruct(in interface{}) map[string]*datatable.Field {
 	if in == nil {
 		return nil
 	}
@@ -538,4 +535,62 @@ func reflects(in interface{}) map[string]*datatable.Field {
 		maps[key] = &datatable.Field{Tag: strings.ToLower(tag), Val: val}
 	}
 	return maps
+}
+
+func setStruct(in interface{}, rows []map[string]interface{}) error {
+	refValue := reflect.ValueOf(in) // value
+	refType := reflect.TypeOf(in)   // type
+	rowsCount := len(rows)
+	var fieldCount int
+	kind := refValue.Kind()
+	switch kind {
+	case reflect.Ptr:
+		fieldCount = refValue.Elem().NumField()
+		refType = refType.Elem()
+		refValue = refValue.Elem()
+	case reflect.Struct:
+		fieldCount = refValue.NumField()
+	case reflect.Slice:
+		for i := 0; i < refValue.Len(); i++ {
+			if i >= rowsCount {
+				return nil
+			}
+			e := refValue.Index(i)
+			switch e.Kind() {
+			case reflect.Ptr:
+				refType = e.Type().Elem()
+				fieldCount = refType.NumField()
+				var value reflect.Value
+				if e.IsNil() {
+					value = reflect.New(refType)
+				} else {
+					value = e
+				}
+				for y := 0; y < fieldCount; y++ {
+					key := refType.Field(y).Name
+					if v, ok := rows[i][key]; ok {
+						if reflect.ValueOf(v).Type() == value.Elem().Field(y).Type() {
+							value.Elem().Field(y).Set(reflect.ValueOf(v))
+						}
+					}
+				}
+				e.Set(value)
+			default:
+				return errors.New("does not support this type")
+			}
+		}
+		return nil
+	}
+	for i := 0; i < fieldCount; i++ {
+		if i >= rowsCount {
+			return nil
+		}
+		key := refType.Field(i).Name // field type
+		if value, ok := rows[i][key]; ok {
+			if reflect.ValueOf(value).Type() == refValue.Field(i).Type() {
+				refValue.Field(i).Set(reflect.ValueOf(value))
+			}
+		}
+	}
+	return nil
 }

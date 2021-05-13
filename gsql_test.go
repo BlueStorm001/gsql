@@ -102,3 +102,17 @@ func Benchmark_Tester(b *testing.B) {
 		}
 	})
 }
+
+func TestSetStruct(t *testing.T) {
+	type teststruct struct {
+		Id   int
+		Name string
+	}
+	t1 := &teststruct{}
+	t.Log(t1)
+	mp := []map[string]interface{}{{"Id": 1, "Name1": "word"}, {"Id": 2, "Name1": "www"}}
+	var tt = make([]*teststruct, len(mp))
+	t.Log(tt)
+	setStruct(tt, mp)
+	t.Log(tt)
+}
