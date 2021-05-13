@@ -424,8 +424,10 @@ func (o *ORM) get() *ORM {
 		return o
 	}
 	orm := o.s.GetORM()
-	orm.SqlStructMap = o.SqlStructMap
-	orm.TableName = o.TableName
+	if orm.Error == nil {
+		orm.SqlStructMap = o.SqlStructMap
+		orm.TableName = o.TableName
+	}
 	return orm
 }
 
