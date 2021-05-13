@@ -73,6 +73,8 @@ func (s *Serve) Database(baseType DatabaseType, database string) *Serve {
 		s.ISQL = &mssqls.Serve{Serve: s.Serve}
 	case Clickhouse:
 		s.ISQL = &clickhouse.Serve{Serve: s.Serve}
+	default:
+		s.Error = errors.New("unknown database type")
 	}
 	return s
 }
