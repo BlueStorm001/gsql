@@ -25,7 +25,7 @@ import (
 	"testing"
 )
 
-var serve = NewDrive(Clickhouse, func() (db *sql.DB, err error) {
+var serve = NewDrive(MySql, func() (db *sql.DB, err error) {
 	return
 }).Config(50, 60)
 
@@ -51,7 +51,7 @@ func TestCount(t *testing.T) {
 func TestSelect(t *testing.T) {
 	option := &options{Id: 1, Text: "test"}
 	orm := serve.NewStruct("table_options", option)
-	command, values := orm.Select().Where("Id=?").OrderBy("id desc").Page(20, 1).GetSQL()
+	command, values := orm.SelectExclude("Text").Where("Id=?").OrderBy("id desc").Page(20, 1).GetSQL()
 	t.Log("[", orm.Id, "]")
 	t.Log("[", command, "]")
 	for k, v := range values {
@@ -73,7 +73,7 @@ func TestGroup(t *testing.T) {
 func TestInsert(t *testing.T) {
 	option := &options{Id: 1, Text: "test"}
 	orm := serve.NewStruct("table_options", option)
-	command, values := orm.Insert().GetSQL()
+	command, values := orm.Insert("Text").GetSQL()
 	t.Log("[", orm.Id, "]")
 	t.Log("[", command, "]")
 	for k, v := range values {
@@ -84,7 +84,7 @@ func TestInsert(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	option := &options{Id: 1, Text: "test"}
 	orm := serve.NewStruct("table_options", option)
-	command, values := orm.Update().Where("Id=?").GetSQL()
+	command, values := orm.UpdateExclude("Text").Where("Id=?").GetSQL()
 	t.Log("[", orm.Id, "]")
 	t.Log("[", command, "]")
 	for k, v := range values {

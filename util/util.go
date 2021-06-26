@@ -190,3 +190,20 @@ func GetFieldName(w string) string {
 	}
 	return builder.String()
 }
+
+func WhetherToSkip(mode int, columns map[string]struct{}, column string) bool {
+	if mode != 0 {
+		_, matched := columns[column]
+		switch mode {
+		case 1:
+			if !matched {
+				return true
+			}
+		case -1:
+			if matched {
+				return true
+			}
+		}
+	}
+	return false
+}

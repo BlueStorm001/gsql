@@ -210,16 +210,34 @@ func (o *ORM) ColumnExclude(columns ...string) *ORM {
 	return o
 }
 
+func (o *ORM) SelectExclude(columns ...string) *ORM {
+	if len(columns) > 0 {
+		o.Columns = make(map[string]struct{})
+		for _, column := range columns {
+			o.Columns[column] = struct{}{}
+		}
+		o.ColumnMode = -1
+	}
+	return o.Select()
+}
+
 func (orm *ORM) Select(columns ...string) *ORM {
 	o := orm.get()
 	if err := o.s.error(); err != nil {
 		o.Error = err
 		return o
 	}
+	if len(columns) > 0 {
+		o.Columns = make(map[string]struct{})
+		for _, column := range columns {
+			o.Columns[column] = struct{}{}
+		}
+		o.ColumnMode = 1
+	}
 	o.processLock.Lock()
 	o.ST = time.Now()
 	o.Mode = datatable.Get
-	o.Error = o.s.ISQL.Select(o.ORM, columns...)
+	o.Error = o.s.ISQL.Select(o.ORM)
 	return o
 }
 
@@ -243,7 +261,11 @@ func (orm *ORM) Insert(columns ...string) *ORM {
 		return o
 	}
 	if len(columns) > 0 {
-		o.ColumnUse(columns...)
+		o.Columns = make(map[string]struct{})
+		for _, column := range columns {
+			o.Columns[column] = struct{}{}
+		}
+		o.ColumnMode = 1
 	}
 	o.processLock.Lock()
 	o.ST = time.Now()
@@ -254,7 +276,11 @@ func (orm *ORM) Insert(columns ...string) *ORM {
 
 func (o *ORM) InsertExclude(columns ...string) *ORM {
 	if len(columns) > 0 {
-		o.ColumnExclude(columns...)
+		o.Columns = make(map[string]struct{})
+		for _, column := range columns {
+			o.Columns[column] = struct{}{}
+		}
+		o.ColumnMode = -1
 	}
 	return o.Insert()
 }
@@ -266,7 +292,11 @@ func (orm *ORM) Update(columns ...string) *ORM {
 		return o
 	}
 	if len(columns) > 0 {
-		o.ColumnUse(columns...)
+		o.Columns = make(map[string]struct{})
+		for _, column := range columns {
+			o.Columns[column] = struct{}{}
+		}
+		o.ColumnMode = 1
 	}
 	o.processLock.Lock()
 	o.ST = time.Now()
@@ -277,7 +307,11 @@ func (orm *ORM) Update(columns ...string) *ORM {
 
 func (o *ORM) UpdateExclude(columns ...string) *ORM {
 	if len(columns) > 0 {
-		o.ColumnExclude(columns...)
+		o.Columns = make(map[string]struct{})
+		for _, column := range columns {
+			o.Columns[column] = struct{}{}
+		}
+		o.ColumnMode = -1
 	}
 	return o.Update()
 }
@@ -405,8 +439,10 @@ func (o *ORM) Dispose() {
 }
 
 func (o *ORM) GetSQL() (string, map[string]*datatable.Field) {
+	sql := o.SqlCommand.ToString()
+	stt := o.SqlStructMap
 	o.s.reset(o)
-	return o.SqlCommand.ToString(), o.SqlStructMap
+	return sql, stt
 }
 
 func (r *SqlResult) GetStruct(inStruct interface{}) error {
@@ -437,6 +473,8 @@ func (s *Serve) reset(orm *ORM) {
 	orm.Error = nil
 	orm.SqlCommand.Reset()
 	orm.SqlValues = nil
+	orm.Columns = nil
+	orm.ColumnMode = 0
 	orm.TC = time.Since(orm.ST)
 	if orm.processLock.State {
 		orm.processLock.Unlock()

@@ -97,29 +97,19 @@ func (s *Serve) dataSet(command string, params ...interface{}) (*datatable.DataS
 	return sr.GetDataSet()
 }
 
-func (s *Serve) Select(orm *datatable.ORM, columns ...string) error {
+func (s *Serve) Select(orm *datatable.ORM) error {
 	orm.SqlCommand.Reset()
 	orm.SqlCommand.Append("SELECT ")
 	var use bool
-	if len(columns) > 0 {
-		for _, column := range columns {
-			if util.Verify(column) {
-				return errors.New("verification failed")
-			}
-			if use {
-				orm.SqlCommand.Append(",")
-			}
-			orm.SqlCommand.Append(column)
-			use = true
+	for k := range orm.SqlStructMap {
+		if util.WhetherToSkip(orm.ColumnMode, orm.Columns, k) {
+			continue
 		}
-	} else {
-		for k := range orm.SqlStructMap {
-			if use {
-				orm.SqlCommand.Append(",")
-			}
-			orm.SqlCommand.Append(k)
-			use = true
+		if use {
+			orm.SqlCommand.Append(",")
 		}
+		orm.SqlCommand.Append(k)
+		use = true
 	}
 	orm.SqlCommand.Append(" FROM ").Append(orm.TableName)
 	return nil
@@ -138,6 +128,9 @@ func (s *Serve) Insert(orm *datatable.ORM) error {
 	valueStr := "("
 	for k, v := range orm.SqlStructMap {
 		if v.Tag != "" && strings.Contains(v.Tag, "auto_increment") {
+			continue
+		}
+		if util.WhetherToSkip(orm.ColumnMode, orm.Columns, k) {
 			continue
 		}
 		if len(fieldStr) > 1 {
@@ -160,6 +153,9 @@ func (s *Serve) Update(orm *datatable.ORM) error {
 	var use bool
 	for k, v := range orm.SqlStructMap {
 		if v.Tag != "" && strings.Contains(v.Tag, "auto_increment") {
+			continue
+		}
+		if util.WhetherToSkip(orm.ColumnMode, orm.Columns, k) {
 			continue
 		}
 		if use {

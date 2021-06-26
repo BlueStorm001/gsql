@@ -29,7 +29,7 @@ import (
 type ISQL interface {
 	DataSet(orm *ORM) (*DataSet, error)
 	DataTable(orm *ORM) (*DataTable, error)
-	Select(orm *ORM, columns ...string) error
+	Select(orm *ORM) error
 	Count(orm *ORM) error
 	Insert(orm *ORM) error
 	Update(orm *ORM) error
@@ -132,6 +132,8 @@ type ORM struct {
 	SqlStructMap map[string]*Field
 	TableName    string
 	Mode         UseMode
+	Columns      map[string]struct{}
+	ColumnMode   int //1 use -1 exclude
 }
 
 type SqlRows struct {
