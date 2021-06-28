@@ -216,5 +216,5 @@ func WhetherToSkip(mode int, columns map[string]struct{}, column string) (string
 			}
 		}
 	}
-	return column, false
+	return "", false
 }
