@@ -102,8 +102,13 @@ func (s *Serve) Select(orm *datatable.ORM) error {
 	orm.SqlCommand.Append("SELECT ")
 	var use bool
 	for k := range orm.SqlStructMap {
-		if util.WhetherToSkip(orm.ColumnMode, orm.Columns, k) {
+		c, ok := util.WhetherToSkip(orm.ColumnMode, orm.Columns, k)
+		if ok {
 			continue
+		}
+		if c != "" {
+			orm.SqlCommand.Append(c)
+			break
 		}
 		if use {
 			orm.SqlCommand.Append(",")
@@ -130,7 +135,7 @@ func (s *Serve) Insert(orm *datatable.ORM) error {
 		if v.Tag != "" && strings.Contains(v.Tag, "auto_increment") {
 			continue
 		}
-		if util.WhetherToSkip(orm.ColumnMode, orm.Columns, k) {
+		if _, ok := util.WhetherToSkip(orm.ColumnMode, orm.Columns, k); ok {
 			continue
 		}
 		if len(fieldStr) > 1 {
@@ -152,7 +157,7 @@ func (s *Serve) Update(orm *datatable.ORM) error {
 	orm.SqlCommand.Append(" ALTER TABLE ").Append(orm.TableName).Append(" UPDATE ")
 	var use bool
 	for k, v := range orm.SqlStructMap {
-		if util.WhetherToSkip(orm.ColumnMode, orm.Columns, k) {
+		if _, ok := util.WhetherToSkip(orm.ColumnMode, orm.Columns, k); ok {
 			continue
 		}
 		if use {

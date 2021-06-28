@@ -51,7 +51,7 @@ func TestCount(t *testing.T) {
 func TestSelect(t *testing.T) {
 	option := &options{Id: 1, Text: "test"}
 	orm := serve.NewStruct("table_options", option)
-	command, values := orm.SelectExclude("Text").Where("Id=?").OrderBy("id desc").Page(20, 1).GetSQL()
+	command, values := orm.Select("*").Where("Id=?").OrderBy("id desc").Page(20, 1).GetSQL()
 	t.Log("[", orm.Id, "]")
 	t.Log("[", command, "]")
 	for k, v := range values {
@@ -62,7 +62,7 @@ func TestSelect(t *testing.T) {
 func TestGroup(t *testing.T) {
 	option := &options{Id: 1, Text: "test"}
 	orm := serve.NewStruct("table_options", option)
-	command, values := orm.Select("Text", "Count(1)", "max(Id)").Where("Id=?").GroupBy("Text").GetSQL()
+	command, values := orm.Select("*").Where("Id=?").GroupBy("Text").GetSQL()
 	t.Log("[", orm.Id, "]")
 	t.Log("[", command, "]")
 	for k, v := range values {
