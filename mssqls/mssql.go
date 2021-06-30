@@ -101,20 +101,28 @@ func (s *Serve) Select(orm *datatable.ORM) error {
 	orm.SqlCommand.Reset()
 	orm.SqlCommand.Append("SELECT ")
 	var use bool
-	for k := range orm.SqlStructMap {
-		c, ok := util.WhetherToSkip(orm.ColumnMode, orm.Columns, k)
-		if ok {
-			continue
-		}
-		if c != "" {
+	switch orm.ColumnMode {
+	case 1:
+		for c := range orm.Columns {
+			if use {
+				orm.SqlCommand.Append(",")
+			}
 			orm.SqlCommand.Append(c)
-			break
+			use = true
 		}
-		if use {
-			orm.SqlCommand.Append(",")
+	default:
+		for c := range orm.SqlStructMap {
+			if orm.ColumnMode == -1 {
+				if util.WhetherToSkip(orm.ColumnMode, orm.Columns, c) {
+					continue
+				}
+			}
+			if use {
+				orm.SqlCommand.Append(",")
+			}
+			orm.SqlCommand.Append(c)
+			use = true
 		}
-		orm.SqlCommand.Append(k)
-		use = true
 	}
 	orm.SqlCommand.Append(" FROM ").Append(orm.TableName)
 	return nil
@@ -135,7 +143,7 @@ func (s *Serve) Insert(orm *datatable.ORM) error {
 		if v.Tag != "" && strings.Contains(v.Tag, "auto_increment") {
 			continue
 		}
-		if _, ok := util.WhetherToSkip(orm.ColumnMode, orm.Columns, k); ok {
+		if util.WhetherToSkip(orm.ColumnMode, orm.Columns, k) {
 			continue
 		}
 		if len(fieldStr) > 1 {
@@ -160,7 +168,7 @@ func (s *Serve) Update(orm *datatable.ORM) error {
 		if v.Tag != "" && strings.Contains(v.Tag, "auto_increment") {
 			continue
 		}
-		if _, ok := util.WhetherToSkip(orm.ColumnMode, orm.Columns, k); ok {
+		if util.WhetherToSkip(orm.ColumnMode, orm.Columns, k) {
 			continue
 		}
 		if use {
