@@ -169,7 +169,7 @@ func (s *Serve) GetORM() *ORM {
 }
 
 func (o *ORM) SetStruct(inStruct interface{}) *ORM {
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -223,7 +223,7 @@ func (o *ORM) SelectExclude(columns ...string) *ORM {
 
 func (orm *ORM) Select(columns ...string) *ORM {
 	o := orm.get()
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -243,7 +243,7 @@ func (orm *ORM) Select(columns ...string) *ORM {
 
 func (orm *ORM) Count() *ORM {
 	o := orm.get()
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -256,7 +256,7 @@ func (orm *ORM) Count() *ORM {
 
 func (orm *ORM) Insert(columns ...string) *ORM {
 	o := orm.get()
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -287,7 +287,7 @@ func (o *ORM) InsertExclude(columns ...string) *ORM {
 
 func (orm *ORM) Update(columns ...string) *ORM {
 	o := orm.get()
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -318,7 +318,7 @@ func (o *ORM) UpdateExclude(columns ...string) *ORM {
 
 func (orm *ORM) Delete() *ORM {
 	o := orm.get()
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -330,7 +330,7 @@ func (orm *ORM) Delete() *ORM {
 }
 
 func (o *ORM) Where(wheres ...string) *ORM {
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -339,7 +339,7 @@ func (o *ORM) Where(wheres ...string) *ORM {
 }
 
 func (o *ORM) OrderBy(field string) *ORM {
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -350,7 +350,7 @@ func (o *ORM) OrderBy(field string) *ORM {
 }
 
 func (o *ORM) GroupBy(field string) *ORM {
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -363,7 +363,7 @@ func (o *ORM) GroupBy(field string) *ORM {
 }
 
 func (o *ORM) Limit(limit int, offset ...int) *ORM {
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		o.Error = err
 		return o
 	}
@@ -398,8 +398,9 @@ func (o *ORM) Execute() *SqlResult {
 	}
 	defer o.s.reset(o)
 	result := &SqlResult{SqlResult: new(datatable.SqlResult)}
-	if err := o.s.error(); err != nil {
+	if err := o.error(); err != nil {
 		result.Error = err
+		o.ErrorSQL = o.SqlCommand.ToString()
 		return result
 	}
 	switch o.Mode {
@@ -460,6 +461,8 @@ func (o *ORM) get() *ORM {
 	if orm.Error == nil {
 		orm.SqlStructMap = o.SqlStructMap
 		orm.TableName = o.TableName
+	} else {
+		orm.Error = o.Error
 	}
 	return orm
 }
@@ -485,6 +488,28 @@ func (s *Serve) reset(orm *ORM) {
 	default:
 		break
 	}
+}
+
+func (o *ORM) error() error {
+	if o == nil {
+		errors.New(msg(505))
+	}
+	if o.Error != nil {
+		return o.Error
+	}
+	if o.s == nil {
+		return errors.New(msg(504))
+	}
+	if o.s.ISQL == nil {
+		return errors.New(msg(502))
+	}
+	if o.s.chs == nil {
+		return errors.New(msg(505))
+	}
+	if o.s.Error != nil {
+		return errors.New("[500]" + o.s.Error.Error())
+	}
+	return nil
 }
 
 func (s *Serve) error() error {
