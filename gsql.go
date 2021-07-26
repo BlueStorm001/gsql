@@ -372,14 +372,11 @@ func (o *ORM) Limit(limit int, offset ...int) *ORM {
 }
 
 func (o *ORM) Page(size int, page int) *ORM {
-	limit := size
-	if page <= 1 {
+	page = page - 1
+	if page < 0 {
 		page = 0
-	} else {
-		limit = size * page
-		page = limit - size
 	}
-	return o.Limit(limit, page)
+	return o.Limit(size, page*size)
 }
 
 func (o *ORM) AddSql(command string) *ORM {
@@ -440,10 +437,10 @@ func (o *ORM) Dispose() {
 }
 
 func (o *ORM) GetSQL() (string, map[string]*datatable.Field) {
-	sql := o.SqlCommand.ToString()
-	stt := o.SqlStructMap
+	sqlStr := o.SqlCommand.ToString()
+	maps := o.SqlStructMap
 	o.s.reset(o)
-	return sql, stt
+	return sqlStr, maps
 }
 
 func (r *SqlResult) GetStruct(inStruct interface{}) error {
@@ -492,7 +489,7 @@ func (s *Serve) reset(orm *ORM) {
 
 func (o *ORM) error() error {
 	if o == nil {
-		errors.New(msg(505))
+		return errors.New(msg(505))
 	}
 	if o.Error != nil {
 		return o.Error
