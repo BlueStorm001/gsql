@@ -33,11 +33,11 @@ func (dt *DataTable) wheres(query string) *DataTable {
 		return dt
 	}
 	dataTable := dt.match(exp.WhereExpr)
+	if dataTable == nil {
+		dataTable = &DataTable{}
+	}
 	dataTable.Name = dt.Name
 	dataTable.Columns = dt.Columns
-	if dataTable.Rows == nil {
-		dataTable.Rows = make([]map[string]interface{}, 0)
-	}
 	return dataTable
 }
 
@@ -62,8 +62,10 @@ func (dt *DataTable) routing(w *Wheres) *DataTable {
 	switch w.Op {
 	case "and", "or":
 		w.R = dt.logic(w)
-	case "=", "<>", "!=", ">", "<", ">=", "<=":
+	case "=", "==", "<>", "!=", ">", "<", ">=", "<=":
 		w.R = dt.contrast(w)
+	default:
+		return nil
 	}
 	return w.R.(*DataTable)
 }
