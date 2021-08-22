@@ -35,6 +35,9 @@ func (dt *DataTable) wheres(query string) *DataTable {
 	dataTable := dt.match(exp.WhereExpr)
 	dataTable.Name = dt.Name
 	dataTable.Columns = dt.Columns
+	if dataTable.Rows == nil {
+		dataTable.Rows = make([]map[string]interface{}, 0)
+	}
 	return dataTable
 }
 
