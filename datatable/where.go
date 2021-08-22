@@ -91,6 +91,9 @@ func (dt *DataTable) logic(w *Wheres) *DataTable {
 func (dt *DataTable) contrast(w *Wheres) *DataTable {
 	lhStr := w.Lh.(string)
 	rhStr := w.Rh.(string)
+	if rhStr == "''" {
+		rhStr = ""
+	}
 	var number float64
 	var use bool
 	var err error

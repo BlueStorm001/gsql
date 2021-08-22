@@ -231,12 +231,16 @@ func lex(buf []byte) (tokens []*token) {
 				escape = true
 			}
 			continue
-		case '\'':
+		case '\'', '"':
 			if do {
 				if escape {
 					escape = false
 					current.buf = append(current.buf, c)
 				} else {
+					if len(current.buf) == 0 {
+						current.buf = append(current.buf, "''"...)
+					}
+
 					do = false
 				}
 			} else {
