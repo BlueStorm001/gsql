@@ -160,7 +160,7 @@ func (dt *DataTable) contrast(w *Wheres) *DataTable {
 						}
 					}
 				}
-			case "=":
+			case "=", "==":
 				if input == util.ToString(value) {
 					verify = true
 				}

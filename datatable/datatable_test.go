@@ -35,7 +35,7 @@ func GetTestDataTable() *DataTable {
 		{"id": 3, "code": "SHA", "name": "CN", "money": 1.26},
 		{"id": 4, "code": "NYC", "name": "US", "money": 3.99},
 		{"id": 7, "code": "MEL", "name": "US", "money": 3.99},
-		{"id": 1, "code": "BBB", "name": "CN", "money": 2.99},
+		{"id": 1, "code": "", "name": "CN", "money": 2.99},
 	}
 	//for i := 10; i < 9999; i++ {
 	//	dt.Rows = append(dt.Rows, map[string]interface{}{"id": i, "code": "BJS", "name": "CN", "money": 1.23})
@@ -46,7 +46,7 @@ func GetTestDataTable() *DataTable {
 
 func TestWhere(t *testing.T) {
 	dt := GetTestDataTable()
-	whereDT1 := dt.Where("code=''").OrderBy("id")
+	whereDT1 := dt.Where("code==''").OrderBy("id")
 	t.Log(whereDT1)
 }
 
