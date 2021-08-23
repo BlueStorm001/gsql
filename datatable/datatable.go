@@ -24,6 +24,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/BlueStorm001/gsql/util"
+	"strings"
 )
 
 type ISQL interface {
@@ -173,8 +174,6 @@ func (rows *SqlRows) GetDataTable() (dt *DataTable, err error) {
 	dt.Columns = make([]*Column, columnLen)
 	data := make([]interface{}, columnLen)
 	for i := range data {
-		//为每一列初始化一个指针
-		//Initialize a pointer for each column
 		data[i] = new(interface{})
 		column := &Column{}
 		column.Name = columns[i].Name()
@@ -192,9 +191,24 @@ func (rows *SqlRows) GetDataTable() (dt *DataTable, err error) {
 			value := *d.(*interface{})
 			switch r := value.(type) {
 			case []byte:
-				row[name] = util.BytToStr(r)
+				typ := strings.ToUpper(dt.Columns[i].Type)
+				switch typ {
+				case "INT", "BIGINT", "SMALLINT", "TINYINT", "MEDIUMINT", "BIT":
+					row[name] = util.ToInt64(value)
+				case "DECIMAL", "FLOAT", "DOUBLE":
+					row[name] = util.ToFloat64(value)
+				case "BOOL":
+					v := util.BytToStr(r)
+					if v == "true" || v == "1" {
+						row[name] = true
+					} else {
+						row[name] = false
+					}
+				default:
+					row[name] = util.BytToStr(r)
+				}
 			default:
-				row[name] = r //取实际类型
+				row[name] = r
 			}
 		}
 		dt.Rows = append(dt.Rows, row)
