@@ -194,7 +194,7 @@ func (rows *SqlRows) GetDataTable() (dt *DataTable, err error) {
 				typ := strings.ToUpper(dt.Columns[i].Type)
 				switch typ {
 				case "INT", "BIGINT", "SMALLINT", "TINYINT", "MEDIUMINT", "BIT":
-					row[name] = util.ToInt64(value)
+					row[name] = util.ToInt(value)
 				case "DECIMAL", "FLOAT", "DOUBLE":
 					row[name] = util.ToFloat64(value)
 				case "BOOL":

@@ -80,8 +80,7 @@ func ToFloat64(value interface{}) float64 {
 		}
 		return 0
 	case []byte:
-		str := BytToStr(v)
-		f, _ := strconv.ParseFloat(str, 64)
+		f, _ := strconv.ParseFloat(BytToStr(v), 64)
 		return f
 	case string:
 		f, _ := strconv.ParseFloat(v, 64)
