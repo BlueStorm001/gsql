@@ -193,19 +193,23 @@ func (rows *SqlRows) GetDataTable() (dt *DataTable, err error) {
 			case []byte:
 				typ := strings.ToUpper(dt.Columns[i].Type)
 				switch typ {
-				case "INT", "BIGINT", "SMALLINT", "TINYINT", "MEDIUMINT", "BIT":
+				case "INT", "SMALLINT", "TINYINT", "MEDIUMINT", "BIT":
 					row[name] = util.ToInt(value)
-				case "DECIMAL", "FLOAT", "DOUBLE":
+				case "BIGINT":
+					row[name] = util.ToInt64(value)
+				case "DOUBLE", "MONEY":
+					row[name] = util.ToFloat32(value)
+				case "DECIMAL", "FLOAT":
 					row[name] = util.ToFloat64(value)
 				case "BOOL":
-					v := util.BytToStr(r)
-					if v == "true" || v == "1" {
+					v := util.ToInt(r)
+					if v == 1 {
 						row[name] = true
 					} else {
 						row[name] = false
 					}
 				default:
-					row[name] = util.BytToStr(r)
+					row[name] = util.ToString(r)
 				}
 			default:
 				row[name] = r

@@ -38,15 +38,12 @@ func BytToStr(src []byte) (dst string) {
 	return
 }
 
-// ToString exp: float:2保留两位小数
 func ToString(value interface{}) string {
 	switch v := value.(type) {
 	case float32, float64:
-		f := ToFloat64(v)
-		return strconv.FormatFloat(f, 'f', -1, 64)
+		return strconv.FormatFloat(ToFloat64(v), 'f', -1, 64)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		f := ToInt64(v)
-		return strconv.FormatInt(f, 10)
+		return strconv.FormatInt(ToInt64(v), 10)
 	case []byte:
 		return BytToStr(v)
 	case string:
@@ -65,11 +62,16 @@ func ToString(value interface{}) string {
 	}
 }
 
+func ToFloat32(value interface{}) float32 {
+	return float32(ToFloat64(value))
+}
+
 func ToFloat64(value interface{}) float64 {
 	switch v := value.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		f := ToInt(v)
-		return float64(f)
+	case int, int8, int16, int32, uint, uint8, uint16, uint32:
+		return float64(ToInt(v))
+	case int64, uint64:
+		return float64(ToInt64(v))
 	case float64:
 		return v
 	case float32:
@@ -80,11 +82,11 @@ func ToFloat64(value interface{}) float64 {
 		}
 		return 0
 	case []byte:
-		f, _ := strconv.ParseFloat(BytToStr(v), 64)
-		return f
+		x, _ := strconv.ParseFloat(BytToStr(v), 64)
+		return x
 	case string:
-		f, _ := strconv.ParseFloat(v, 64)
-		return f
+		x, _ := strconv.ParseFloat(v, 64)
+		return x
 	default:
 		return 0
 	}
@@ -92,9 +94,10 @@ func ToFloat64(value interface{}) float64 {
 
 func ToInt(value interface{}) int {
 	switch v := value.(type) {
-	case float64, float32:
-		f := ToFloat64(v)
-		return int(f)
+	case float64:
+		return int(v)
+	case float32:
+		return int(v)
 	case string:
 		f, _ := strconv.Atoi(v)
 		return f
@@ -124,15 +127,31 @@ func ToInt(value interface{}) int {
 		}
 		return 0
 	case []byte:
-		f, _ := strconv.Atoi(BytToStr(v))
-		return f
+		x, _ := strconv.Atoi(BytToStr(v))
+		return x
 	default:
 		return 0
 	}
 }
 
 func ToInt64(value interface{}) int64 {
-	return int64(ToInt(value))
+	switch v := value.(type) {
+	case float64:
+		return int64(v)
+	case float32:
+		return int64(v)
+	case string, int, uint, uint8, uint16, uint32, int8, int16, int32, bool:
+		return int64(ToInt(v))
+	case uint64:
+		return int64(v)
+	case int64:
+		return v
+	case []byte:
+		x, _ := strconv.ParseInt(BytToStr(v), 10, 64)
+		return x
+	default:
+		return 0
+	}
 }
 
 func FormatFloat(value interface{}) (float64, bool) {
@@ -144,10 +163,6 @@ func FormatFloat(value interface{}) (float64, bool) {
 	default:
 		return 0, false
 	}
-}
-
-func ToNowStr() string {
-	return ToDateTimeStr(time.Now())
 }
 
 func ToDateTimeStr(d time.Time) string {
