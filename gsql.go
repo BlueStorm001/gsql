@@ -397,7 +397,7 @@ func (o *ORM) Execute() *SqlResult {
 	result := &SqlResult{SqlResult: new(datatable.SqlResult)}
 	if err := o.error(); err != nil {
 		result.Error = err
-		if o.SqlCommand.Len() > 0 {
+		if o.ORM != nil && o.SqlCommand.Len() > 0 {
 			o.ErrorSQL = o.SqlCommand.ToString()
 		}
 		return result
