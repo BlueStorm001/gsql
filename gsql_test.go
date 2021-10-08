@@ -113,6 +113,6 @@ func TestSetStruct(t *testing.T) {
 	mp := []map[string]interface{}{{"Id": 1, "Name1": "word"}, {"Id": 2, "Name1": "www"}}
 	var tt = make([]*teststruct, len(mp))
 	t.Log(tt)
-	setStruct(tt, mp)
+	// setStruct(tt, mp)
 	t.Log(tt)
 }

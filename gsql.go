@@ -139,7 +139,7 @@ func (s *Serve) NewStruct(table string, inStruct interface{}) *ORM {
 	orm := s.GetORM()
 	if orm.Error == nil {
 		orm.TableName = table
-		orm.SqlStructMap = getStruct(inStruct)
+		orm.SqlStructMap = GetStruct(inStruct)
 	}
 	return orm
 }
@@ -173,7 +173,7 @@ func (o *ORM) SetStruct(inStruct interface{}) *ORM {
 		o.Error = err
 		return o
 	}
-	o.SqlStructMap = getStruct(inStruct)
+	o.SqlStructMap = GetStruct(inStruct)
 	return o
 }
 
@@ -426,6 +426,9 @@ func (o *ORM) Execute() *SqlResult {
 			result.Error = err
 		}
 	}
+	if o.ConnClose {
+		result.Error = o.Close()
+	}
 	if result.Error != nil {
 		o.ErrorSQL = o.SqlCommand.ToString()
 	}
@@ -457,7 +460,7 @@ func (r *SqlResult) GetStruct(inStruct interface{}) error {
 	if r.RowsAffected == 0 {
 		return errors.New("data line is empty")
 	}
-	return setStruct(inStruct, r.DataTable.Rows)
+	return util.SetStruct(inStruct, r.DataTable.Rows)
 }
 
 func (o *ORM) get() *ORM {
@@ -550,7 +553,7 @@ func msg(code int) string {
 	}
 }
 
-func getStruct(in interface{}) map[string]*datatable.Field {
+func GetStruct(in interface{}) map[string]*datatable.Field {
 	if in == nil {
 		return nil
 	}
@@ -605,62 +608,4 @@ func getStruct(in interface{}) map[string]*datatable.Field {
 		maps[key] = &datatable.Field{Tag: strings.ToLower(tag), Val: val}
 	}
 	return maps
-}
-
-func setStruct(in interface{}, rows []map[string]interface{}) error {
-	refValue := reflect.ValueOf(in) // value
-	refType := reflect.TypeOf(in)   // type
-	rowsCount := len(rows)
-	var fieldCount int
-	kind := refValue.Kind()
-	switch kind {
-	case reflect.Ptr:
-		fieldCount = refValue.Elem().NumField()
-		refType = refType.Elem()
-		refValue = refValue.Elem()
-	case reflect.Struct:
-		fieldCount = refValue.NumField()
-	case reflect.Slice:
-		for i := 0; i < refValue.Len(); i++ {
-			if i >= rowsCount {
-				return nil
-			}
-			e := refValue.Index(i)
-			switch e.Kind() {
-			case reflect.Ptr:
-				refType = e.Type().Elem()
-				fieldCount = refType.NumField()
-				var value reflect.Value
-				if e.IsNil() {
-					value = reflect.New(refType)
-				} else {
-					value = e
-				}
-				for y := 0; y < fieldCount; y++ {
-					key := refType.Field(y).Name
-					if v, ok := rows[i][key]; ok {
-						if reflect.ValueOf(v).Type() == value.Elem().Field(y).Type() {
-							value.Elem().Field(y).Set(reflect.ValueOf(v))
-						}
-					}
-				}
-				e.Set(value)
-			default:
-				return errors.New("does not support this type")
-			}
-		}
-		return nil
-	}
-	for i := 0; i < fieldCount; i++ {
-		if i >= rowsCount {
-			return nil
-		}
-		key := refType.Field(i).Name // field type
-		if value, ok := rows[i][key]; ok {
-			if reflect.ValueOf(value).Type() == refValue.Field(i).Type() {
-				refValue.Field(i).Set(reflect.ValueOf(value))
-			}
-		}
-	}
-	return nil
 }

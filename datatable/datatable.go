@@ -135,6 +135,7 @@ type ORM struct {
 	Mode         UseMode
 	Columns      map[string]struct{}
 	ColumnMode   int //1 use -1 exclude
+	ConnClose    bool
 }
 
 type SqlRows struct {
