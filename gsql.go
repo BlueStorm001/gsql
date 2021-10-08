@@ -438,6 +438,14 @@ func (o *ORM) Dispose() {
 	}
 }
 
+func (o *ORM) Close() error {
+	return o.s.Close()
+}
+
+func (s *Serve) Close() error {
+	return s.ISQL.Close()
+}
+
 func (o *ORM) GetSQL() (string, map[string]*datatable.Field) {
 	sqlStr := o.SqlCommand.ToString()
 	maps := o.SqlStructMap
