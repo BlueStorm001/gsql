@@ -157,6 +157,7 @@ func (s *Serve) GetORM() *ORM {
 				case <-orm.chanComplete:
 					return
 				case <-time.After(time.Second * time.Duration(s.Timeout)):
+					orm.Close()
 					orm.Dispose()
 				}
 			}(c)
