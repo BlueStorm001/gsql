@@ -35,6 +35,15 @@ type Serve struct {
 }
 
 func (s *Serve) Connect() error {
+	var err error
+	if s == nil || s.conn == nil {
+		err = errors.New("conn is null")
+	} else {
+		err = s.conn.Ping()
+	}
+	if err == nil {
+		return nil
+	}
 	switch s.DriveMode {
 	case 1:
 		s.conn, s.Error = s.DriveServe(s.Serve)
@@ -60,19 +69,15 @@ func (s *Serve) Close() error {
 }
 
 func (s *Serve) query(command string, args ...interface{}) (*sql.Rows, error) {
-	if s.conn == nil {
-		if err := s.Connect(); err != nil {
-			return nil, err
-		}
+	if err := s.Connect(); err != nil {
+		return nil, err
 	}
 	return s.conn.Query(command, args...)
 }
 
 func (s *Serve) exec(command string, args ...interface{}) (sql.Result, error) {
-	if s.conn == nil {
-		if err := s.Connect(); err != nil {
-			return nil, err
-		}
+	if err := s.Connect(); err != nil {
+		return nil, err
 	}
 	return s.conn.Exec(command, args...)
 }
