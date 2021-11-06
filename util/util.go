@@ -178,16 +178,18 @@ func Verify(sql string) bool {
 	return re.MatchString(sql)
 }
 
-func GetFieldName(w string) string {
+func GetFieldName(w string) (string, string) {
+	var andor string
 	bytes := []byte(w)
 	builder := Builder{}
 	for _, b := range bytes {
 		switch b {
 		case ' ':
 			if builder.Len() > 0 {
-				d := strings.ToLower(builder.String())
+				d := strings.ToLower(builder.ToString())
 				if d == "and" || d == "or" {
 					builder.Reset()
+					andor = d
 				}
 			}
 		case
@@ -202,7 +204,7 @@ func GetFieldName(w string) string {
 			builder.AppendByte(b)
 		}
 	}
-	return builder.String()
+	return builder.String(), andor
 }
 
 func WhetherToSkip(mode int, columns map[string]struct{}, column string) bool {

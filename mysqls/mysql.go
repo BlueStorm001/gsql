@@ -197,15 +197,22 @@ func (s *Serve) Where(orm *datatable.ORM, wheres ...string) error {
 		return nil
 	}
 	orm.SqlCommand.Append(" WHERE")
-	for _, w := range wheres {
+	for i, w := range wheres {
 		if util.Verify(w) {
 			return errors.New("verification failed")
 		}
-		f := util.GetFieldName(w)
-		if v, ok := orm.SqlStructMap[f]; ok {
+		field, andor := util.GetFieldName(w)
+		if v, ok := orm.SqlStructMap[field]; ok {
 			orm.SqlValues = append(orm.SqlValues, v.Val)
 		} else {
 			return errors.New("the query condition does not exist")
+		}
+		if i > 0 {
+			switch andor {
+			case "and", "or":
+			default:
+				orm.SqlCommand.Append(" AND")
+			}
 		}
 		orm.SqlCommand.Append(" ").Append(w)
 	}
